@@ -2,6 +2,7 @@ image: registry-gitlab.gog.com/galaxy-client/gitlab-ci-tools:latest
 
 stages:
   - test
+  - deploy
 
 test_package:
   stage: test
@@ -10,3 +11,13 @@ test_package:
     - pytest
   except:
     - tags
+
+deploy_package:
+  stage: deploy
+  script:
+    - export VERSION=$(python setup.py --version)
+    - python setup.py sdist --formats=gztar upload -r gog-pypi
+    - curl -X POST --silent --show-error --fail
+        "https://gitlab.gog.com/api/v4/projects/${CI_PROJECT_ID}/repository/tags?"
+        "tag_name=${VERSION}&ref=${CI_COMMIT_REF_NAME}&private_token=${PACKAGE_DEPLOYER_API_TOKEN}"
+  when: manual
