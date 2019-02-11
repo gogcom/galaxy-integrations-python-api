@@ -20,3 +20,5 @@ deploy_package:
     - curl -X POST --silent --show-error --fail
         "https://gitlab.gog.com/api/v4/projects/${CI_PROJECT_ID}/repository/tags?tag_name=${VERSION}&ref=${CI_COMMIT_REF_NAME}&private_token=${PACKAGE_DEPLOYER_API_TOKEN}"
   when: manual
+  except:
+    - tags
