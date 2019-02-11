@@ -1,0 +1,12 @@
+image: registry-gitlab.gog.com/galaxy-client/gitlab-ci-tools:latest
+
+stages:
+  - test
+
+test_package:
+  stage: test
+  script:
+    - pip install -r requirements.txt
+    - pytest
+  except:
+    - tags
