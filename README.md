@@ -24,7 +24,7 @@ Use [pyinstaller](https://www.pyinstaller.org/) to create plugin executbale.
 
 Install required packages:
 ```bash
-pip install -r requirments.txt
+pip install -r requirements.txt
 ```
 
 Run tests:
