@@ -44,7 +44,6 @@ class Plugin():
 
         # implemented by developer
         self._register_method("init_authentication", self.authenticate)
-        self._register_method("pass_login_credentials", self.pass_login_credentials)
         self._register_method(
             "import_owned_games",
             self.get_owned_games,
@@ -255,14 +254,9 @@ class Plugin():
     # methods
     async def authenticate(self, stored_credentials=None):
         """Overide this method to handle plugin authentication.
-        The method should return one of:
-        - galaxy.api.types.AuthenticationSuccess - on successful authencication
-        - galaxy.api.types.NextStep - when more authentication steps are required
-        Or raise galaxy.api.types.LoginError on authentication failure.
+        The method should return galaxy.api.types.Authentication
+        or raise galaxy.api.types.LoginError on authentication failure.
         """
-        raise NotImplementedError()
-
-    async def pass_login_credentials(self, step, credentials):
         raise NotImplementedError()
 
     async def get_owned_games(self):

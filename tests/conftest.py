@@ -14,7 +14,6 @@ def plugin():
     """Return plugin instance with all feature methods mocked"""
     async_methods = (
         "authenticate",
-        "pass_login_credentials",
         "get_owned_games",
         "get_unlocked_achievements",
         "get_local_games",

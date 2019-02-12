@@ -5,14 +5,9 @@ from galaxy.api.jsonrpc import ApplicationError
 from galaxy.api.consts import LocalGameState, PresenceState
 
 @dataclass
-class AuthenticationSuccess():
+class Authentication():
     user_id: str
     user_name: str
-
-@dataclass
-class NextStep():
-    next_step: str
-    auth_params: dict
 
 class LoginError(ApplicationError):
     def __init__(self, current_step, reason):
