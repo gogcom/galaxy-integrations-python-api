@@ -1,9 +1,10 @@
 import asyncio
 import json
 
-from galaxy.api.types import (
-    SendMessageError, MarkAsReadError, Room, GetRoomsError, Message, GetRoomHistoryError
-)
+import pytest
+
+from galaxy.api.types import Room, Message
+from galaxy.api.errors import UnknownError, TooManyMessagesSent, IncoherentLastMessage, MessageNotFound
 
 def test_send_message_success(plugin, readline, write):
     request = {
@@ -28,7 +29,11 @@ def test_send_message_success(plugin, readline, write):
         "result": None
     }
 
-def test_send_message_failure(plugin, readline, write):
+@pytest.mark.parametrize("error,code,message", [
+    pytest.param(UnknownError, 0, "Unknown error", id="unknown_error"),
+    pytest.param(TooManyMessagesSent, 300, "Too many messages sent", id="too_many_messages")
+])
+def test_send_message_failure(plugin, readline, write, error, code, message):
     request = {
         "jsonrpc": "2.0",
         "id": "6",
@@ -40,7 +45,7 @@ def test_send_message_failure(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.send_message.side_effect = SendMessageError("reason")
+    plugin.send_message.side_effect = error()
     asyncio.run(plugin.run())
     plugin.send_message.assert_called_with(room_id="15", message="Bye")
     response = json.loads(write.call_args[0][0])
@@ -49,11 +54,8 @@ def test_send_message_failure(plugin, readline, write):
         "jsonrpc": "2.0",
         "id": "6",
         "error": {
-            "code": -32003,
-            "message": "Custom error",
-            "data": {
-                "reason": "reason"
-            }
+            "code": code,
+            "message": message
         }
     }
 
@@ -80,7 +82,16 @@ def test_mark_as_read_success(plugin, readline, write):
         "result": None
     }
 
-def test_mark_as_read_failure(plugin, readline, write):
+@pytest.mark.parametrize("error,code,message", [
+    pytest.param(UnknownError, 0, "Unknown error", id="unknown_error"),
+    pytest.param(
+        IncoherentLastMessage,
+        400,
+        "Different last message id on backend",
+        id="incoherent_last_message"
+    )
+])
+def test_mark_as_read_failure(plugin, readline, write, error, code, message):
     request = {
         "jsonrpc": "2.0",
         "id": "4",
@@ -92,7 +103,7 @@ def test_mark_as_read_failure(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.mark_as_read.side_effect = MarkAsReadError("reason")
+    plugin.mark_as_read.side_effect = error()
     asyncio.run(plugin.run())
     plugin.mark_as_read.assert_called_with(room_id="18", last_message_id="7")
     response = json.loads(write.call_args[0][0])
@@ -101,11 +112,8 @@ def test_mark_as_read_failure(plugin, readline, write):
         "jsonrpc": "2.0",
         "id": "4",
         "error": {
-            "code": -32003,
-            "message": "Custom error",
-            "data": {
-                "reason": "reason"
-            }
+            "code": code,
+            "message": message
         }
     }
 
@@ -151,7 +159,7 @@ def test_get_rooms_failure(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.get_rooms.side_effect = GetRoomsError("reason")
+    plugin.get_rooms.side_effect = UnknownError()
     asyncio.run(plugin.run())
     plugin.get_rooms.assert_called_with()
     response = json.loads(write.call_args[0][0])
@@ -160,11 +168,8 @@ def test_get_rooms_failure(plugin, readline, write):
         "jsonrpc": "2.0",
         "id": "9",
         "error": {
-            "code": -32003,
-            "message": "Custom error",
-            "data": {
-                "reason": "reason"
-            }
+            "code": 0,
+            "message": "Unknown error"
         }
     }
 
@@ -209,7 +214,11 @@ def test_get_room_history_from_message_success(plugin, readline, write):
         }
     }
 
-def test_get_room_history_from_message_failure(plugin, readline, write):
+@pytest.mark.parametrize("error,code,message", [
+    pytest.param(UnknownError, 0, "Unknown error", id="unknown_error"),
+    pytest.param(MessageNotFound, 500, "Message not found", id="message_not_found")
+])
+def test_get_room_history_from_message_failure(plugin, readline, write, error, code, message):
     request = {
         "jsonrpc": "2.0",
         "id": "7",
@@ -221,7 +230,7 @@ def test_get_room_history_from_message_failure(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.get_room_history_from_message.side_effect = GetRoomHistoryError("reason")
+    plugin.get_room_history_from_message.side_effect = error()
     asyncio.run(plugin.run())
     plugin.get_room_history_from_message.assert_called_with(room_id="33", message_id="88")
     response = json.loads(write.call_args[0][0])
@@ -230,11 +239,8 @@ def test_get_room_history_from_message_failure(plugin, readline, write):
         "jsonrpc": "2.0",
         "id": "7",
         "error": {
-            "code": -32003,
-            "message": "Custom error",
-            "data": {
-                "reason": "reason"
-            }
+            "code": code,
+            "message": message
         }
     }
 
@@ -287,7 +293,7 @@ def test_get_room_history_from_timestamp_failure(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.get_room_history_from_timestamp.side_effect = GetRoomHistoryError("reason")
+    plugin.get_room_history_from_timestamp.side_effect = UnknownError()
     asyncio.run(plugin.run())
     plugin.get_room_history_from_timestamp.assert_called_with(
         room_id="10",
@@ -299,11 +305,8 @@ def test_get_room_history_from_timestamp_failure(plugin, readline, write):
         "jsonrpc": "2.0",
         "id": "3",
         "error": {
-            "code": -32003,
-            "message": "Custom error",
-            "data": {
-                "reason": "reason"
-            }
+            "code": 0,
+            "message": "Unknown error"
         }
     }
 

@@ -26,9 +26,19 @@ class InvalidParams(JsonRpcError):
     def __init__(self):
         super().__init__(-32601, "Invalid params")
 
+class Timeout(JsonRpcError):
+    def __init__(self):
+        super().__init__(-32000, "Method timed out")
+
+class Aborted(JsonRpcError):
+    def __init__(self):
+        super().__init__(-32001, "Method aborted")
+
 class ApplicationError(JsonRpcError):
-    def __init__(self, data):
-        super().__init__(-32003, "Custom error", data)
+    def __init__(self, code, message, data):
+        if code >= -32768 and code <= -32000:
+            raise ValueError("The error code in reserved range")
+        super().__init__(code, message, data)
 
 Request = namedtuple("Request", ["method", "params", "id"], defaults=[{}, None])
 Method = namedtuple("Method", ["callback", "internal"])
@@ -172,10 +182,13 @@ class Server():
             "id": request_id,
             "error": {
                 "code": error.code,
-                "message": error.message,
-                "data": error.data
+                "message": error.message
             }
         }
+
+        if error.data is not None:
+            response["error"]["data"] = error.data
+
         self._send(response)
 
 class NotificationClient():

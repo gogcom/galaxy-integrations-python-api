@@ -1,7 +1,8 @@
 import asyncio
 import json
 
-from galaxy.api.types import UserInfo, Presence, GetFriendsError, GetUsersError
+from galaxy.api.types import UserInfo, Presence
+from galaxy.api.errors import UnknownError
 from galaxy.api.consts import PresenceState
 
 def test_get_friends_success(plugin, readline, write):
@@ -73,7 +74,7 @@ def test_get_friends_failure(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.get_friends.side_effect = GetFriendsError("reason")
+    plugin.get_friends.side_effect = UnknownError()
     asyncio.run(plugin.run())
     plugin.get_friends.assert_called_with()
     response = json.loads(write.call_args[0][0])
@@ -82,11 +83,8 @@ def test_get_friends_failure(plugin, readline, write):
         "jsonrpc": "2.0",
         "id": "3",
         "error": {
-            "code": -32003,
-            "message": "Custom error",
-            "data": {
-                "reason": "reason"
-            }
+            "code": 0,
+            "message": "Unknown error",
         }
     }
 
@@ -202,7 +200,7 @@ def test_get_users_failure(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.get_users.side_effect = GetUsersError("reason")
+    plugin.get_users.side_effect = UnknownError()
     asyncio.run(plugin.run())
     plugin.get_users.assert_called_with(user_id_list=["10", "11", "12"])
     response = json.loads(write.call_args[0][0])
@@ -211,10 +209,7 @@ def test_get_users_failure(plugin, readline, write):
         "jsonrpc": "2.0",
         "id": "12",
         "error": {
-            "code": -32003,
-            "message": "Custom error",
-            "data": {
-                "reason": "reason"
-            }
+            "code": 0,
+            "message": "Unknown error"
         }
     }

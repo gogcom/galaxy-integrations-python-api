@@ -1,7 +1,14 @@
 import asyncio
 import json
 
-from galaxy.api.types import Authentication, LoginError
+import pytest
+
+from galaxy.api.types import Authentication
+from galaxy.api.errors import (
+    UnknownError, InvalidCredentials, NetworkError, LoggedInElsewhere, ProtocolError,
+    BackendNotAvailable, BackendTimeout, BackendError, TemporaryBlocked, Banned, AccessDenied,
+    ParentalControlBlock, DeviceBlocked, RegionBlocked
+)
 
 def test_success(plugin, readline, write):
     request = {
@@ -25,7 +32,23 @@ def test_success(plugin, readline, write):
         }
     }
 
-def test_failure(plugin, readline, write):
+@pytest.mark.parametrize("error,code,message", [
+    pytest.param(UnknownError, 0, "Unknown error", id="unknown_error"),
+    pytest.param(InvalidCredentials, 100, "Invalid credentials", id="invalid_credentials"),
+    pytest.param(NetworkError, 101, "Network error", id="network_error"),
+    pytest.param(LoggedInElsewhere, 102, "Logged in elsewhere", id="logged_elsewhere"),
+    pytest.param(ProtocolError, 103, "Protocol error", id="protocol_error"),
+    pytest.param(BackendNotAvailable, 104, "Backend not available", id="backend_not_available"),
+    pytest.param(BackendTimeout, 105, "Backend timed out", id="backend_timeout"),
+    pytest.param(BackendError, 106, "Backend error", id="backend_error"),
+    pytest.param(TemporaryBlocked, 107, "Temporary blocked", id="temporary_blocked"),
+    pytest.param(Banned, 108, "Banned", id="banned"),
+    pytest.param(AccessDenied, 109, "Access denied", id="access_denied"),
+    pytest.param(ParentalControlBlock, 110, "Parental control block", id="parental_control_clock"),
+    pytest.param(DeviceBlocked, 111, "Device blocked", id="device_blocked"),
+    pytest.param(RegionBlocked, 112, "Region blocked", id="region_blocked")
+])
+def test_failure(plugin, readline, write, error, code, message):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
@@ -33,7 +56,7 @@ def test_failure(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.authenticate.side_effect = LoginError("step", "reason")
+    plugin.authenticate.side_effect = error()
     asyncio.run(plugin.run())
     plugin.authenticate.assert_called_with()
     response = json.loads(write.call_args[0][0])
@@ -42,12 +65,8 @@ def test_failure(plugin, readline, write):
         "jsonrpc": "2.0",
         "id": "3",
         "error": {
-            "code": -32003,
-            "message": "Custom error",
-            "data": {
-                "current_step": "step",
-                "reason": "reason"
-            }
+            "code": code,
+            "message": message
         }
     }
 

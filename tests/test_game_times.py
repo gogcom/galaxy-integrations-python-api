@@ -1,7 +1,8 @@
 import asyncio
 import json
 
-from galaxy.api.types import GameTime, GetGameTimeError
+from galaxy.api.types import GameTime
+from galaxy.api.errors import UnknownError
 
 def test_success(plugin, readline, write):
     request = {
@@ -46,7 +47,7 @@ def test_failure(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.get_game_times.side_effect = GetGameTimeError("reason")
+    plugin.get_game_times.side_effect = UnknownError()
     asyncio.run(plugin.run())
     plugin.get_game_times.assert_called_with()
     response = json.loads(write.call_args[0][0])
@@ -55,11 +56,8 @@ def test_failure(plugin, readline, write):
         "jsonrpc": "2.0",
         "id": "3",
         "error": {
-            "code": -32003,
-            "message": "Custom error",
-            "data": {
-                "reason": "reason"
-            }
+            "code": 0,
+            "message": "Unknown error",
         }
     }
 

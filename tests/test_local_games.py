@@ -1,8 +1,11 @@
 import asyncio
 import json
 
-from galaxy.api.types import GetLocalGamesError, LocalGame
+import pytest
+
+from galaxy.api.types import LocalGame
 from galaxy.api.consts import LocalGameState
+from galaxy.api.errors import UnknownError, FailedParsingManifest
 
 def test_success(plugin, readline, write):
     request = {
@@ -38,7 +41,14 @@ def test_success(plugin, readline, write):
         }
     }
 
-def test_failure(plugin, readline, write):
+@pytest.mark.parametrize(
+    "error,code,message",
+    [
+        pytest.param(UnknownError, 0, "Unknown error", id="unknown_error"),
+        pytest.param(FailedParsingManifest, 200, "Failed parsing manifest", id="failed_parsing")
+    ],
+)
+def test_failure(plugin, readline, write, error, code, message):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
@@ -46,7 +56,7 @@ def test_failure(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.get_local_games.side_effect = GetLocalGamesError("reason")
+    plugin.get_local_games.side_effect = error()
     asyncio.run(plugin.run())
     plugin.get_local_games.assert_called_with()
     response = json.loads(write.call_args[0][0])
@@ -55,11 +65,8 @@ def test_failure(plugin, readline, write):
         "jsonrpc": "2.0",
         "id": "3",
         "error": {
-            "code": -32003,
-            "message": "Custom error",
-            "data": {
-                "reason": "reason"
-            }
+            "code": code,
+            "message": message
         }
     }
 

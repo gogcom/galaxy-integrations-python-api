@@ -1,7 +1,8 @@
 import asyncio
 import json
 
-from galaxy.api.types import Game, Dlc, LicenseInfo, GetGamesError
+from galaxy.api.types import Game, Dlc, LicenseInfo
+from galaxy.api.errors import UnknownError
 
 def test_success(plugin, readline, write):
     request = {
@@ -73,7 +74,7 @@ def test_failure(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.get_owned_games.side_effect = GetGamesError("reason")
+    plugin.get_owned_games.side_effect = UnknownError()
     asyncio.run(plugin.run())
     plugin.get_owned_games.assert_called_with()
     response = json.loads(write.call_args[0][0])
@@ -82,11 +83,8 @@ def test_failure(plugin, readline, write):
         "jsonrpc": "2.0",
         "id": "3",
         "error": {
-            "code": -32003,
-            "message": "Custom error",
-            "data": {
-                "reason": "reason"
-            }
+            "code": 0,
+            "message": "Unknown error"
         }
     }
 

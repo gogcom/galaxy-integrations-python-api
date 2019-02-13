@@ -1,7 +1,8 @@
 import asyncio
 import json
 
-from galaxy.api.types import Achievement, GetAchievementsError
+from galaxy.api.types import Achievement
+from galaxy.api.errors import UnknownError
 
 def test_success(plugin, readline, write):
     request = {
@@ -49,7 +50,7 @@ def test_failure(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.get_unlocked_achievements.side_effect = GetAchievementsError("reason")
+    plugin.get_unlocked_achievements.side_effect = UnknownError()
     asyncio.run(plugin.run())
     plugin.get_unlocked_achievements.assert_called()
     response = json.loads(write.call_args[0][0])
@@ -58,11 +59,8 @@ def test_failure(plugin, readline, write):
         "jsonrpc": "2.0",
         "id": "3",
         "error": {
-            "code": -32003,
-            "message": "Custom error",
-            "data": {
-                "reason": "reason"
-            }
+            "code": 0,
+            "message": "Unknown error"
         }
     }
 
