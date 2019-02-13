@@ -70,7 +70,7 @@ def test_unlock_achievement(plugin, write):
     achievement = Achievement("lvl20", 1548422395)
 
     async def couritine():
-        plugin.unlock_achievement(achievement)
+        plugin.unlock_achievement("14", achievement)
 
     asyncio.run(couritine())
     response = json.loads(write.call_args[0][0])
@@ -79,7 +79,10 @@ def test_unlock_achievement(plugin, write):
         "jsonrpc": "2.0",
         "method": "achievement_unlocked",
         "params": {
-            "achievement_id": "lvl20",
-            "unlock_time": 1548422395
+            "game_id": "14",
+            "achievement": {
+                "achievement_id": "lvl20",
+                "unlock_time": 1548422395
+            }
         }
     }

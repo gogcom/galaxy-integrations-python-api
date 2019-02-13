@@ -207,8 +207,12 @@ class Plugin():
         params = {"owned_game" : game}
         self._notification_client.notify("owned_game_updated", params)
 
-    def unlock_achievement(self, achievement):
-        self._notification_client.notify("achievement_unlocked", achievement)
+    def unlock_achievement(self, game_id, achievement):
+        params = {
+            "game_id": game_id,
+            "achievement": achievement
+        }
+        self._notification_client.notify("achievement_unlocked", params)
 
     def update_local_game_status(self, local_game):
         params = {"local_game" : local_game}
