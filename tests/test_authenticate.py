@@ -84,3 +84,17 @@ def test_store_credentials(plugin, write):
         "method": "store_credentials",
         "params": credentials
     }
+
+def test_lost_authentication(plugin, readline, write):
+
+    async def couritine():
+        plugin.lost_authentication()
+
+    asyncio.run(couritine())
+    response = json.loads(write.call_args[0][0])
+
+    assert response == {
+        "jsonrpc": "2.0",
+        "method": "authentication_lost",
+        "params": None
+    }

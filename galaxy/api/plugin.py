@@ -242,6 +242,9 @@ class Plugin():
         params = {"game_time" : game_time}
         self._notification_client.notify("game_time_updated", params)
 
+    def lost_authentication(self):
+        self._notification_client.notify("authentication_lost", None)
+
     # handlers
     def tick(self):
         """This method is called periodicaly.
