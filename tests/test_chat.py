@@ -4,7 +4,10 @@ import json
 import pytest
 
 from galaxy.api.types import Room, Message
-from galaxy.api.errors import UnknownError, TooManyMessagesSent, IncoherentLastMessage, MessageNotFound
+from galaxy.api.errors import (
+    UnknownError, AuthenticationRequired, BackendNotAvailable, BackendTimeout, BackendError,
+    TooManyMessagesSent, IncoherentLastMessage, MessageNotFound
+)
 
 def test_send_message_success(plugin, readline, write):
     request = {
@@ -31,6 +34,10 @@ def test_send_message_success(plugin, readline, write):
 
 @pytest.mark.parametrize("error,code,message", [
     pytest.param(UnknownError, 0, "Unknown error", id="unknown_error"),
+    pytest.param(AuthenticationRequired, 1, "Authentication required", id="not_authenticated"),
+    pytest.param(BackendNotAvailable, 2, "Backend not available", id="backend_not_available"),
+    pytest.param(BackendTimeout, 3, "Backend timed out", id="backend_timeout"),
+    pytest.param(BackendError, 4, "Backend error", id="backend_error"),
     pytest.param(TooManyMessagesSent, 300, "Too many messages sent", id="too_many_messages")
 ])
 def test_send_message_failure(plugin, readline, write, error, code, message):
@@ -84,6 +91,10 @@ def test_mark_as_read_success(plugin, readline, write):
 
 @pytest.mark.parametrize("error,code,message", [
     pytest.param(UnknownError, 0, "Unknown error", id="unknown_error"),
+    pytest.param(AuthenticationRequired, 1, "Authentication required", id="not_authenticated"),
+    pytest.param(BackendNotAvailable, 2, "Backend not available", id="backend_not_available"),
+    pytest.param(BackendTimeout, 3, "Backend timed out", id="backend_timeout"),
+    pytest.param(BackendError, 4, "Backend error", id="backend_error"),
     pytest.param(
         IncoherentLastMessage,
         400,
@@ -216,6 +227,10 @@ def test_get_room_history_from_message_success(plugin, readline, write):
 
 @pytest.mark.parametrize("error,code,message", [
     pytest.param(UnknownError, 0, "Unknown error", id="unknown_error"),
+    pytest.param(AuthenticationRequired, 1, "Authentication required", id="not_authenticated"),
+    pytest.param(BackendNotAvailable, 2, "Backend not available", id="backend_not_available"),
+    pytest.param(BackendTimeout, 3, "Backend timed out", id="backend_timeout"),
+    pytest.param(BackendError, 4, "Backend error", id="backend_error"),
     pytest.param(MessageNotFound, 500, "Message not found", id="message_not_found")
 ])
 def test_get_room_history_from_message_failure(plugin, readline, write, error, code, message):

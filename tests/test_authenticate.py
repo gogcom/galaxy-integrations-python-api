@@ -34,19 +34,19 @@ def test_success(plugin, readline, write):
 
 @pytest.mark.parametrize("error,code,message", [
     pytest.param(UnknownError, 0, "Unknown error", id="unknown_error"),
+    pytest.param(BackendNotAvailable, 2, "Backend not available", id="backend_not_available"),
+    pytest.param(BackendTimeout, 3, "Backend timed out", id="backend_timeout"),
+    pytest.param(BackendError, 4, "Backend error", id="backend_error"),
     pytest.param(InvalidCredentials, 100, "Invalid credentials", id="invalid_credentials"),
     pytest.param(NetworkError, 101, "Network error", id="network_error"),
     pytest.param(LoggedInElsewhere, 102, "Logged in elsewhere", id="logged_elsewhere"),
     pytest.param(ProtocolError, 103, "Protocol error", id="protocol_error"),
-    pytest.param(BackendNotAvailable, 104, "Backend not available", id="backend_not_available"),
-    pytest.param(BackendTimeout, 105, "Backend timed out", id="backend_timeout"),
-    pytest.param(BackendError, 106, "Backend error", id="backend_error"),
-    pytest.param(TemporaryBlocked, 107, "Temporary blocked", id="temporary_blocked"),
-    pytest.param(Banned, 108, "Banned", id="banned"),
-    pytest.param(AccessDenied, 109, "Access denied", id="access_denied"),
-    pytest.param(ParentalControlBlock, 110, "Parental control block", id="parental_control_clock"),
-    pytest.param(DeviceBlocked, 111, "Device blocked", id="device_blocked"),
-    pytest.param(RegionBlocked, 112, "Region blocked", id="region_blocked")
+    pytest.param(TemporaryBlocked, 104, "Temporary blocked", id="temporary_blocked"),
+    pytest.param(Banned, 105, "Banned", id="banned"),
+    pytest.param(AccessDenied, 106, "Access denied", id="access_denied"),
+    pytest.param(ParentalControlBlock, 107, "Parental control block", id="parental_control_clock"),
+    pytest.param(DeviceBlocked, 108, "Device blocked", id="device_blocked"),
+    pytest.param(RegionBlocked, 109, "Region blocked", id="region_blocked")
 ])
 def test_failure(plugin, readline, write, error, code, message):
     request = {

@@ -4,6 +4,22 @@ class UnknownError(ApplicationError):
     def __init__(self, data=None):
         super().__init__(0, "Unknown error", data)
 
+class AuthenticationRequired(ApplicationError):
+    def __init__(self, data=None):
+        super().__init__(1, "Authentication required", data)
+
+class BackendNotAvailable(ApplicationError):
+    def __init__(self, data=None):
+        super().__init__(2, "Backend not available", data)
+
+class BackendTimeout(ApplicationError):
+    def __init__(self, data=None):
+        super().__init__(3, "Backend timed out", data)
+
+class BackendError(ApplicationError):
+    def __init__(self, data=None):
+        super().__init__(4, "Backend error", data)
+
 class InvalidCredentials(ApplicationError):
     def __init__(self, data=None):
         super().__init__(100, "Invalid credentials", data)
@@ -20,41 +36,29 @@ class ProtocolError(ApplicationError):
     def __init__(self, data=None):
         super().__init__(103, "Protocol error", data)
 
-class BackendNotAvailable(ApplicationError):
-    def __init__(self, data=None):
-        super().__init__(104, "Backend not available", data)
-
-class BackendTimeout(ApplicationError):
-    def __init__(self, data=None):
-        super().__init__(105, "Backend timed out", data)
-
-class BackendError(ApplicationError):
-    def __init__(self, data=None):
-        super().__init__(106, "Backend error", data)
-
 class TemporaryBlocked(ApplicationError):
     def __init__(self, data=None):
-        super().__init__(107, "Temporary blocked", data)
+        super().__init__(104, "Temporary blocked", data)
 
 class Banned(ApplicationError):
     def __init__(self, data=None):
-        super().__init__(108, "Banned", data)
+        super().__init__(105, "Banned", data)
 
 class AccessDenied(ApplicationError):
     def __init__(self, data=None):
-        super().__init__(109, "Access denied", data)
+        super().__init__(106, "Access denied", data)
 
 class ParentalControlBlock(ApplicationError):
     def __init__(self, data=None):
-        super().__init__(110, "Parental control block", data)
+        super().__init__(107, "Parental control block", data)
 
 class DeviceBlocked(ApplicationError):
     def __init__(self, data=None):
-        super().__init__(111, "Device blocked", data)
+        super().__init__(108, "Device blocked", data)
 
 class RegionBlocked(ApplicationError):
     def __init__(self, data=None):
-        super().__init__(112, "Region blocked", data)
+        super().__init__(109, "Region blocked", data)
 
 class FailedParsingManifest(ApplicationError):
     def __init__(self, data=None):
