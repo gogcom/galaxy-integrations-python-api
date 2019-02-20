@@ -149,7 +149,7 @@ class Server():
     @staticmethod
     def _parse_request(data):
         try:
-            jsonrpc_request = json.loads(data)
+            jsonrpc_request = json.loads(data, encoding="utf-8")
             if jsonrpc_request.get("jsonrpc") != "2.0":
                 raise InvalidRequest()
             del jsonrpc_request["jsonrpc"]
@@ -163,7 +163,7 @@ class Server():
         try:
             line = self._encoder.encode(data)
             logging.debug("Sending data: %s", line)
-            self._writer.write(line + "\n")
+            self._writer.write((line + "\n").encode("utf-8"))
             asyncio.create_task(self._writer.drain())
         except TypeError as error:
             logging.error(str(error))
@@ -209,7 +209,7 @@ class NotificationClient():
         try:
             line = self._encoder.encode(data)
             logging.debug("Sending data: %s", line)
-            self._writer.write(line + "\n")
+            self._writer.write((line + "\n").encode("utf-8"))
             asyncio.create_task(self._writer.drain())
         except TypeError as error:
             logging.error("Failed to parse outgoing message: %s", str(error))

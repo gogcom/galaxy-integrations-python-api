@@ -2,14 +2,14 @@ from galaxy.api.plugin import Plugin
 from galaxy.api.consts import Platform, Feature
 
 def test_base_class():
-    plugin = Plugin(Platform.Generic)
+    plugin = Plugin(Platform.Generic, None, None, None)
     assert plugin.features == []
 
 def test_no_overloads():
     class PluginImpl(Plugin): #pylint: disable=abstract-method
         pass
 
-    plugin = PluginImpl(Platform.Generic)
+    plugin = PluginImpl(Platform.Generic, None, None, None)
     assert plugin.features == []
 
 def test_one_method_feature():
@@ -17,7 +17,7 @@ def test_one_method_feature():
         async def get_owned_games(self):
             pass
 
-    plugin = PluginImpl(Platform.Generic)
+    plugin = PluginImpl(Platform.Generic, None, None, None)
     assert plugin.features == [Feature.ImportOwnedGames]
 
 def test_multiple_methods_feature_all():
@@ -33,7 +33,7 @@ def test_multiple_methods_feature_all():
         async def get_room_history_from_timestamp(self, room_id, timestamp):
             pass
 
-    plugin = PluginImpl(Platform.Generic)
+    plugin = PluginImpl(Platform.Generic, None, None, None)
     assert plugin.features == [Feature.Chat]
 
 def test_multiple_methods_feature_not_all():
@@ -41,5 +41,5 @@ def test_multiple_methods_feature_not_all():
         async def send_message(self, room_id, message):
             pass
 
-    plugin = PluginImpl(Platform.Generic)
+    plugin = PluginImpl(Platform.Generic, None, None, None)
     assert plugin.features == []

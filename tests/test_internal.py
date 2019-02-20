@@ -4,7 +4,7 @@ import json
 from galaxy.api.plugin import Plugin
 from galaxy.api.consts import Platform
 
-def test_get_capabilites(readline, write):
+def test_get_capabilites(reader, writer, readline, write):
     class PluginImpl(Plugin): #pylint: disable=abstract-method
         async def get_owned_games(self):
             pass
@@ -14,7 +14,8 @@ def test_get_capabilites(readline, write):
         "id": "3",
         "method": "get_capabilities"
     }
-    plugin = PluginImpl(Platform.Generic)
+    token = "token"
+    plugin = PluginImpl(Platform.Generic, reader, writer, token)
     readline.side_effect = [json.dumps(request), ""]
     asyncio.run(plugin.run())
     response = json.loads(write.call_args[0][0])
@@ -25,7 +26,8 @@ def test_get_capabilites(readline, write):
             "platform_name": "generic",
             "features": [
                 "ImportOwnedGames"
-            ]
+            ],
+            "token": token
         }
     }
 

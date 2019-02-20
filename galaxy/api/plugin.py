@@ -6,7 +6,6 @@ from enum import Enum
 from collections import OrderedDict
 
 from galaxy.api.jsonrpc import Server, NotificationClient
-from galaxy.api.stream import stdio
 from galaxy.api.consts import Feature
 
 class JSONEncoder(json.JSONEncoder):
@@ -21,13 +20,14 @@ class JSONEncoder(json.JSONEncoder):
         return super().default(o)
 
 class Plugin():
-    def __init__(self, platform):
+    def __init__(self, platform, reader, writer, handshake_token):
         self._platform = platform
 
         self._feature_methods = OrderedDict()
         self._active = True
 
-        self._reader, self._writer = stdio()
+        self._reader, self._writer = reader, writer
+        self._handshake_token = handshake_token
 
         encoder = JSONEncoder()
         self._server = Server(self._reader, self._writer, encoder)
@@ -181,7 +181,8 @@ class Plugin():
     def _get_capabilities(self):
         return {
             "platform_name": self._platform,
-            "features": self.features
+            "features": self.features,
+            "token": self._handshake_token
         }
 
     @staticmethod
@@ -307,3 +308,23 @@ class Plugin():
 
     async def get_game_times(self):
         raise NotImplementedError()
+
+
+def create_and_run_plugin(plugin_class, argv):
+    if not issubclass(plugin_class, Plugin):
+        raise TypeError("plugin_class must be subclass of Plugin")
+    if len(argv) < 3:
+        raise ValueError("Not enough parameters, required: token, port")
+    token = argv[1]
+    try:
+        port = int(argv[2])
+    except ValueError as e:
+        raise ValueError("Failed to parse port value, {}".format(e))
+    if not (1 <= port <= 65535):
+        raise ValueError("Port value out of range (1, 65535)")
+
+    async def coroutine():
+        reader, writer = await asyncio.open_connection("127.0.0.1", port)
+        plugin = plugin_class(reader, writer, token)
+        await plugin.run()
+    asyncio.run(coroutine())

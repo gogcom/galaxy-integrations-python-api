@@ -1,16 +1,36 @@
 from contextlib import ExitStack
 import logging
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import pytest
 
 from galaxy.api.plugin import Plugin
-from galaxy.api.stream import StdinReader, StdoutWriter
 from galaxy.api.consts import Platform
 from tests.async_mock import AsyncMock
 
 @pytest.fixture()
-def plugin():
+def reader():
+    stream = MagicMock(name="stream_reader")
+    stream.readline = AsyncMock()
+    yield stream
+
+@pytest.fixture()
+def writer():
+    stream = MagicMock(name="stream_writer")
+    stream.write = MagicMock()
+    stream.drain = AsyncMock()
+    yield stream
+
+@pytest.fixture()
+def readline(reader):
+    yield reader.readline
+
+@pytest.fixture()
+def write(writer):
+    yield writer.write
+
+@pytest.fixture()
+def plugin(reader, writer):
     """Return plugin instance with all feature methods mocked"""
     async_methods = (
         "authenticate",
@@ -40,17 +60,7 @@ def plugin():
             stack.enter_context(patch.object(Plugin, method, new_callable=AsyncMock))
         for method in methods:
             stack.enter_context(patch.object(Plugin, method))
-        yield Plugin(Platform.Generic)
-
-@pytest.fixture()
-def readline():
-    with patch.object(StdinReader, "readline", new_callable=AsyncMock) as mock:
-        yield mock
-
-@pytest.fixture()
-def write():
-    with patch.object(StdoutWriter, "write") as mock:
-        yield mock
+        yield Plugin(Platform.Generic, reader, writer, "token")
 
 @pytest.fixture(autouse=True)
 def my_caplog(caplog):
