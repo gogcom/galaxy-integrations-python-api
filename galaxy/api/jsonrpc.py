@@ -64,10 +64,12 @@ class Server():
 
     async def run(self):
         while self._active:
-            data = await self._reader.readline()
-            if not data:
-                # on windows rederecting a pipe to stdin result on continues
-                # not-blocking return of empty line on EOF
+            try:
+                data = await self._reader.readline()
+                if not data:
+                    self._eof()
+                    continue
+            except:
                 self._eof()
                 continue
             data = data.strip()
