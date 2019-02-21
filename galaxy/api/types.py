@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 from galaxy.api.consts import LicenseType, LocalGameState, PresenceState
 
@@ -11,7 +11,7 @@ class Authentication():
 @dataclass
 class LicenseInfo():
     license_type: LicenseType
-    owner: str = None
+    owner: Optional[str] = None
 
 @dataclass
 class Dlc():
@@ -39,8 +39,8 @@ class LocalGame():
 @dataclass
 class Presence():
     presence_state: PresenceState
-    game_id: str = None
-    presence_status: str = None
+    game_id: Optional[str] = None
+    presence_status: Optional[str] = None
 
 @dataclass
 class UserInfo():
