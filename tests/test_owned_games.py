@@ -2,6 +2,7 @@ import asyncio
 import json
 
 from galaxy.api.types import Game, Dlc, LicenseInfo
+from galaxy.api.consts import LicenseType
 from galaxy.api.errors import UnknownError
 
 def test_success(plugin, readline, write):
@@ -13,15 +14,15 @@ def test_success(plugin, readline, write):
 
     readline.side_effect = [json.dumps(request), ""]
     plugin.get_owned_games.return_value = [
-        Game("3", "Doom", None, LicenseInfo("SinglePurchase", None)),
+        Game("3", "Doom", None, LicenseInfo(LicenseType.SinglePurchase, None)),
         Game(
             "5",
             "Witcher 3",
             [
-                Dlc("7", "Hearts of Stone", LicenseInfo("SinglePurchase", None)),
-                Dlc("8", "Temerian Armor Set", LicenseInfo("FreeToPlay", None)),
+                Dlc("7", "Hearts of Stone", LicenseInfo(LicenseType.SinglePurchase, None)),
+                Dlc("8", "Temerian Armor Set", LicenseInfo(LicenseType.FreeToPlay, None)),
             ],
-            LicenseInfo("SinglePurchase", None))
+            LicenseInfo(LicenseType.SinglePurchase, None))
     ]
     asyncio.run(plugin.run())
     plugin.get_owned_games.assert_called_with()
@@ -89,7 +90,7 @@ def test_failure(plugin, readline, write):
     }
 
 def test_add_game(plugin, write):
-    game = Game("3", "Doom", None, LicenseInfo("SinglePurchase", None))
+    game = Game("3", "Doom", None, LicenseInfo(LicenseType.SinglePurchase, None))
 
     async def couritine():
         plugin.add_game(game)
@@ -127,7 +128,7 @@ def test_remove_game(plugin, write):
     }
 
 def test_update_game(plugin, write):
-    game = Game("3", "Doom", None, LicenseInfo("SinglePurchase", None))
+    game = Game("3", "Doom", None, LicenseInfo(LicenseType.SinglePurchase, None))
 
     async def couritine():
         plugin.update_game(game)

@@ -23,6 +23,12 @@ class Feature(Enum):
     ImportUsers = "ImportUsers"
     VerifyGame = "VerifyGame"
 
+class LicenseType(Enum):
+	SinglePurchase = "SinglePurchase"
+	FreeToPlay = "FreeToPlay"
+	OtherUserLicense = "OtherUserLicense"
+	Unknown = "Unknown"
+
 class LocalGameState(Enum):
     Installed = "Installed"
     Running = "Running"

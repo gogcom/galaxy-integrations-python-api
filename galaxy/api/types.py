@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 
-from galaxy.api.consts import LocalGameState, PresenceState
+from galaxy.api.consts import LicenseType, LocalGameState, PresenceState
 
 @dataclass
 class Authentication():
@@ -10,7 +10,7 @@ class Authentication():
 
 @dataclass
 class LicenseInfo():
-    license_type: str
+    license_type: LicenseType
     owner: str = None
 
 @dataclass
