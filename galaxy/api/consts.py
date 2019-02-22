@@ -12,6 +12,7 @@ class Platform(Enum):
     Battlenet = "battlenet"
 
 class Feature(Enum):
+    Unknown = "Unknown"
     ImportInstalledGames = "ImportInstalledGames"
     ImportOwnedGames = "ImportOwnedGames"
     LaunchGame = "LaunchGame"
@@ -24,16 +25,18 @@ class Feature(Enum):
     VerifyGame = "VerifyGame"
 
 class LicenseType(Enum):
-	SinglePurchase = "SinglePurchase"
-	FreeToPlay = "FreeToPlay"
-	OtherUserLicense = "OtherUserLicense"
-	Unknown = "Unknown"
+    Unknown = "Unknown"
+    SinglePurchase = "SinglePurchase"
+    FreeToPlay = "FreeToPlay"
+    OtherUserLicense = "OtherUserLicense"
 
 class LocalGameState(Enum):
+    Unknown = "Unknown"
     Installed = "Installed"
     Running = "Running"
 
 class PresenceState(Enum):
+    Unknown = "Unknown"
     Online = "online"
     Offline = "offline"
     Away = "away"
