@@ -20,6 +20,10 @@ class BackendError(ApplicationError):
     def __init__(self, data=None):
         super().__init__(4, "Backend error", data)
 
+class UnknownBackendResponse(ApplicationError):
+    def __init__(self, data=None):
+        super().__init__(4, "Backend responded in uknown way", data)
+
 class InvalidCredentials(ApplicationError):
     def __init__(self, data=None):
         super().__init__(100, "Invalid credentials", data)
