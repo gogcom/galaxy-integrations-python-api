@@ -1,9 +1,11 @@
 import asyncio
 import json
 import logging
+import logging.handlers
 import dataclasses
 from enum import Enum
 from collections import OrderedDict
+import sys
 
 from galaxy.api.jsonrpc import Server, NotificationClient
 from galaxy.api.consts import Feature
@@ -21,6 +23,7 @@ class JSONEncoder(json.JSONEncoder):
 
 class Plugin():
     def __init__(self, platform, reader, writer, handshake_token):
+        logging.info("Creating plugin for platform %s", platform.value)
         self._platform = platform
 
         self._feature_methods = OrderedDict()
@@ -167,7 +170,10 @@ class Plugin():
         async def pass_control():
             while self._active:
                 logging.debug("Passing control to plugin")
-                self.tick()
+                try:
+                    self.tick()
+                except Exception:
+                    logging.exception("Unexpected exception raised in plugin tick")
                 await asyncio.sleep(1)
 
         await asyncio.gather(pass_control(), self._server.run())
@@ -309,22 +315,40 @@ class Plugin():
     async def get_game_times(self):
         raise NotImplementedError()
 
-
 def create_and_run_plugin(plugin_class, argv):
-    if not issubclass(plugin_class, Plugin):
-        raise TypeError("plugin_class must be subclass of Plugin")
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+    if len(argv) >= 4:
+        handler = logging.handlers.RotatingFileHandler(argv[3], "a", 10000000, 10)
+        root.addHandler(handler)
+
     if len(argv) < 3:
-        raise ValueError("Not enough parameters, required: token, port")
+        logging.critical("Not enough parameters, required: token, port")
+        sys.exit(1)
+
     token = argv[1]
+
     try:
         port = int(argv[2])
-    except ValueError as e:
-        raise ValueError("Failed to parse port value, {}".format(e))
+    except ValueError:
+        logging.critical("Failed to parse port value: %s", argv[2])
+        sys.exit(2)
+
     if not (1 <= port <= 65535):
-        raise ValueError("Port value out of range (1, 65535)")
+        logging.critical("Port value out of range (1, 65535)")
+        sys.exit(3)
+
+    if not issubclass(plugin_class, Plugin):
+        logging.critical("plugin_class must be subclass of Plugin")
+        sys.exit(4)
 
     async def coroutine():
         reader, writer = await asyncio.open_connection("127.0.0.1", port)
         plugin = plugin_class(reader, writer, token)
         await plugin.run()
-    asyncio.run(coroutine())
+
+    try:
+        asyncio.run(coroutine())
+    except Exception:
+        logging.exception("Error while running plugin")
+        sys.exit(5)

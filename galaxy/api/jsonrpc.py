@@ -143,8 +143,8 @@ class Server():
                     self._send_error(request.id, MethodNotFound())
                 except JsonRpcError as error:
                     self._send_error(request.id, error)
-                except Exception as error: #pylint: disable=broad-except
-                    logging.error("Unexpected exception raised in plugin handler: %s", repr(error))
+                except Exception: #pylint: disable=broad-except
+                    logging.exception("Unexpected exception raised in plugin handler")
 
             asyncio.create_task(handle())
 
