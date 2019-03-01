@@ -31,7 +31,7 @@ class LicenseType(Enum):
     OtherUserLicense = "OtherUserLicense"
 
 class LocalGameState(Enum):
-    Unknown = "Unknown"
+    None_ = "None"
     Installed = "Installed"
     Running = "Running"
 
