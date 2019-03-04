@@ -104,6 +104,7 @@ class Server():
         method = self._notifications.get(request.method)
         if not method:
             logging.error("Received uknown notification: %s", request.method)
+            return
 
         callback, internal = method
         if internal:
