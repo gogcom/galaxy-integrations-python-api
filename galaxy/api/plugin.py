@@ -315,12 +315,23 @@ class Plugin():
     async def get_game_times(self):
         raise NotImplementedError()
 
-def create_and_run_plugin(plugin_class, argv):
+def _prepare_logging(logger_file):
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)
-    if len(argv) >= 4:
-        handler = logging.handlers.RotatingFileHandler(argv[3], "a", 10000000, 10)
-        root.addHandler(handler)
+    handler = logging.handlers.RotatingFileHandler(
+        logger_file,
+        mode="a",
+        maxBytes=10000000,
+        backupCount=10,
+        encoding="utf-8"
+    )
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    root.addHandler(handler)
+
+def create_and_run_plugin(plugin_class, argv):
+    logger_file = argv[3] if len(argv) >= 4 else "output.log"
+    _prepare_logging(logger_file)
 
     if len(argv) < 3:
         logging.critical("Not enough parameters, required: token, port")
