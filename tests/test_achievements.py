@@ -1,8 +1,17 @@
 import asyncio
 import json
+from pytest import raises
 
 from galaxy.api.types import Achievement
 from galaxy.api.errors import UnknownError
+
+def test_initialization_no_unlock_time():
+    with raises(Exception):
+        Achievement(achievement_id="lvl30", achievement_name="Got level 30")
+
+def test_initialization_no_id_nor_name():
+    with raises(AssertionError):
+        Achievement(unlock_time=1234567890)
 
 def test_success(plugin, readline, write):
     request = {
@@ -15,8 +24,9 @@ def test_success(plugin, readline, write):
     }
     readline.side_effect = [json.dumps(request), ""]
     plugin.get_unlocked_achievements.return_value = [
-        Achievement("lvl10", 1548421241),
-        Achievement("lvl20", 1548422395)
+        Achievement(achievement_id="lvl10", unlock_time=1548421241),
+        Achievement(achievement_name="Got level 20", unlock_time=1548422395),
+        Achievement(achievement_id="lvl30", achievement_name="Got level 30", unlock_time=1548495633)
     ]
     asyncio.run(plugin.run())
     plugin.get_unlocked_achievements.assert_called_with(game_id="14")
@@ -32,8 +42,13 @@ def test_success(plugin, readline, write):
                     "unlock_time": 1548421241
                 },
                 {
-                    "achievement_id": "lvl20",
+                    "achievement_name": "Got level 20",
                     "unlock_time": 1548422395
+                },
+                {
+                    "achievement_id": "lvl30",
+                    "achievement_name": "Got level 30",
+                    "unlock_time": 1548495633
                 }
             ]
         }
@@ -65,7 +80,7 @@ def test_failure(plugin, readline, write):
     }
 
 def test_unlock_achievement(plugin, write):
-    achievement = Achievement("lvl20", 1548422395)
+    achievement = Achievement(achievement_id="lvl20", unlock_time=1548422395)
 
     async def couritine():
         plugin.unlock_achievement("14", achievement)

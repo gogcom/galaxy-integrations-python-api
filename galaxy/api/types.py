@@ -28,8 +28,13 @@ class Game():
 
 @dataclass
 class Achievement():
-    achievement_id: str
     unlock_time: int
+    achievement_id: Optional[str] = None
+    achievement_name: Optional[str] = None
+
+    def __post_init__(self):
+        assert self.achievement_id or self.achievement_name, \
+            "One of achievement_id or achievement_name is required"
 
 @dataclass
 class LocalGame():
