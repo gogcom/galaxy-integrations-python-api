@@ -6,6 +6,7 @@ import dataclasses
 from enum import Enum
 from collections import OrderedDict
 import sys
+import os
 
 from galaxy.api.jsonrpc import Server, NotificationClient
 from galaxy.api.consts import Feature
@@ -319,6 +320,8 @@ def _prepare_logging(logger_file):
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)
     if logger_file:
+        # ensure destination folder exists
+        os.makedirs(os.path.dirname(os.path.abspath(logger_file)), exist_ok=True)
         handler = logging.handlers.RotatingFileHandler(
             logger_file,
             mode="a",
