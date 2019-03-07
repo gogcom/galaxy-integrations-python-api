@@ -15,7 +15,7 @@ def test_get_capabilites(reader, writer, readline, write):
         "method": "get_capabilities"
     }
     token = "token"
-    plugin = PluginImpl(Platform.Generic, reader, writer, token)
+    plugin = PluginImpl(Platform.Generic, "0.1", reader, writer, token)
     readline.side_effect = [json.dumps(request), ""]
     asyncio.run(plugin.run())
     response = json.loads(write.call_args[0][0])

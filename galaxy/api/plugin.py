@@ -23,9 +23,10 @@ class JSONEncoder(json.JSONEncoder):
         return super().default(o)
 
 class Plugin():
-    def __init__(self, platform, reader, writer, handshake_token):
-        logging.info("Creating plugin for platform %s", platform.value)
+    def __init__(self, platform, version, reader, writer, handshake_token):
+        logging.info("Creating plugin for platform %s, version %s", platform.value, version)
         self._platform = platform
+        self._version = version
 
         self._feature_methods = OrderedDict()
         self._active = True
