@@ -31,3 +31,8 @@ Run tests:
 ```bash
 pytest
 ```
+
+## Changelog
+
+### 0.14
+* Added required version parameter to Plugin constructor.
