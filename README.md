@@ -34,5 +34,7 @@ pytest
 
 ## Changelog
 
+### 0.15
+* `shutdown()` is called on socket disconnection.
 ### 0.14
 * Added required version parameter to Plugin constructor.
