@@ -39,7 +39,7 @@ class Plugin():
         self._notification_client = NotificationClient(self._writer, encoder)
 
         def eof_handler():
-            self._active = False
+            self._shutdown()
         self._server.register_eof(eof_handler)
 
         # internal
