@@ -48,7 +48,7 @@ class Plugin():
         self._register_method("ping", self._ping, internal=True)
 
         # implemented by developer
-        self._register_method("init_authentication", self.authenticate)
+        self._register_method("init_authentication", self.authenticate, sensitive_params=["stored_credentials"])
         self._register_method(
             "import_owned_games",
             self.get_owned_games,
@@ -138,7 +138,7 @@ class Plugin():
                 return False
         return True
 
-    def _register_method(self, name, handler, result_name=None, internal=False, feature=None):
+    def _register_method(self, name, handler, result_name=None, internal=False, sensitive_params=False, feature=None):
         if internal:
             def method(params):
                 result = handler(**params)
@@ -147,7 +147,7 @@ class Plugin():
                         result_name: result
                     }
                 return result
-            self._server.register_method(name, method, True)
+            self._server.register_method(name, method, True, sensitive_params)
         else:
             async def method(params):
                 result = await handler(**params)
@@ -156,13 +156,13 @@ class Plugin():
                         result_name: result
                     }
                 return result
-            self._server.register_method(name, method, False)
+            self._server.register_method(name, method, False, sensitive_params)
 
         if feature is not None:
             self._feature_methods.setdefault(feature, []).append(handler)
 
-    def _register_notification(self, name, handler, internal=False, feature=None):
-        self._server.register_notification(name, handler, internal)
+    def _register_notification(self, name, handler, internal=False, sensitive_params=False, feature=None):
+        self._server.register_notification(name, handler, internal, sensitive_params)
 
         if feature is not None:
             self._feature_methods.setdefault(feature, []).append(handler)
@@ -202,7 +202,7 @@ class Plugin():
         """Notify client to store plugin credentials.
         They will be pass to next authencicate calls.
         """
-        self._notification_client.notify("store_credentials", credentials)
+        self._notification_client.notify("store_credentials", credentials, sensitive_params=True)
 
     def add_game(self, game):
         params = {"owned_game" : game}

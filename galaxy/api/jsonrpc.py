@@ -1,5 +1,6 @@
 import asyncio
 from collections import namedtuple
+from collections.abc import Iterable
 import logging
 import json
 
@@ -41,7 +42,21 @@ class ApplicationError(JsonRpcError):
         super().__init__(code, message, data)
 
 Request = namedtuple("Request", ["method", "params", "id"], defaults=[{}, None])
-Method = namedtuple("Method", ["callback", "internal"])
+Method = namedtuple("Method", ["callback", "internal", "sensitive_params"])
+
+def anonymise_sensitive_params(params, sensitive_params):
+    anomized_data = "****"
+    if not sensitive_params:
+        return params
+
+    if isinstance(sensitive_params, Iterable):
+        anomized_params = params.copy()
+        for key in anomized_params.keys():
+            if key in sensitive_params:
+                anomized_params[key] = anomized_data
+        return anomized_params
+
+    return anomized_data
 
 class Server():
     def __init__(self, reader, writer, encoder=json.JSONEncoder()):
@@ -53,11 +68,27 @@ class Server():
         self._notifications = {}
         self._eof_listeners = []
 
-    def register_method(self, name, callback, internal):
-        self._methods[name] = Method(callback, internal)
+    def register_method(self, name, callback, internal, sensitive_params=False):
+        """
+        Register method
+        :param name:
+        :param callback:
+        :param internal: if True the callback will be processed immediately (synchronously)
+        :param sensitive_params: list of parameters that will by anonymized before logging; if False - no params
+        are considered sensitive, if True - all params are considered sensitive
+        """
+        self._methods[name] = Method(callback, internal, sensitive_params)
 
-    def register_notification(self, name, callback, internal):
-        self._notifications[name] = Method(callback, internal)
+    def register_notification(self, name, callback, internal, sensitive_params=False):
+        """
+        Register notification
+        :param name:
+        :param callback:
+        :param internal: if True the callback will be processed immediately (synchronously)
+        :param sensitive_params: list of parameters that will by anonymized before logging; if False - no params
+        are considered sensitive, if True - all params are considered sensitive
+        """
+        self._notifications[name] = Method(callback, internal, sensitive_params)
 
     def register_eof(self, callback):
         self._eof_listeners.append(callback)
@@ -73,7 +104,7 @@ class Server():
                 self._eof()
                 continue
             data = data.strip()
-            logging.debug("Received data: %s", data)
+            logging.debug("Received %d bytes of data", len(data))
             self._handle_input(data)
 
     def stop(self):
@@ -92,43 +123,39 @@ class Server():
             self._send_error(None, error)
             return
 
-        logging.debug("Parsed input: %s", request)
-
         if request.id is not None:
             self._handle_request(request)
         else:
             self._handle_notification(request)
 
     def _handle_notification(self, request):
-        logging.debug("Handling notification %s", request)
         method = self._notifications.get(request.method)
         if not method:
-            logging.error("Received uknown notification: %s", request.method)
+            logging.error("Received unknown notification: %s", request.method)
             return
 
-        callback, internal = method
+        callback, internal, sensitive_params = method
+        self._log_request(request, sensitive_params)
+
         if internal:
             # internal requests are handled immediately
             callback(**request.params)
         else:
             try:
                 asyncio.create_task(callback(**request.params))
-            except Exception as error: #pylint: disable=broad-except
-                logging.error(
-                    "Unexpected exception raised in notification handler: %s",
-                    repr(error)
-                )
+            except Exception:
+                logging.exception("Unexpected exception raised in notification handler")
 
     def _handle_request(self, request):
-        logging.debug("Handling request %s", request)
         method = self._methods.get(request.method)
-
         if not method:
-            logging.error("Received uknown request: %s", request.method)
+            logging.error("Received unknown request: %s", request.method)
             self._send_error(request.id, MethodNotFound())
             return
 
-        callback, internal = method
+        callback, internal, sensitive_params = method
+        self._log_request(request, sensitive_params)
+
         if internal:
             # internal requests are handled immediately
             response = callback(request.params)
@@ -166,7 +193,8 @@ class Server():
         try:
             line = self._encoder.encode(data)
             logging.debug("Sending data: %s", line)
-            self._writer.write((line + "\n").encode("utf-8"))
+            data = (line + "\n").encode("utf-8")
+            self._writer.write(data)
             asyncio.create_task(self._writer.drain())
         except TypeError as error:
             logging.error(str(error))
@@ -194,25 +222,47 @@ class Server():
 
         self._send(response)
 
+    @staticmethod
+    def _log_request(request, sensitive_params):
+        params = anonymise_sensitive_params(request.params, sensitive_params)
+        if request.id is not None:
+            logging.info("Handling request: id=%s, method=%s, params=%s", request.id, request.method, params)
+        else:
+            logging.info("Handling notification: method=%s, params=%s", request.method, params)
+
 class NotificationClient():
     def __init__(self, writer, encoder=json.JSONEncoder()):
         self._writer = writer
         self._encoder = encoder
         self._methods = {}
 
-    def notify(self, method, params):
+    def notify(self, method, params, sensitive_params=False):
+        """
+        Send notification
+        :param method:
+        :param params:
+        :param sensitive_params: list of parameters that will by anonymized before logging; if False - no params
+        are considered sensitive, if True - all params are considered sensitive
+        """
         notification = {
             "jsonrpc": "2.0",
             "method": method,
             "params": params
         }
+        self._log(method, params, sensitive_params)
         self._send(notification)
 
     def _send(self, data):
         try:
             line = self._encoder.encode(data)
-            logging.debug("Sending data: %s", line)
-            self._writer.write((line + "\n").encode("utf-8"))
+            data = (line + "\n").encode("utf-8")
+            logging.debug("Sending %d byte of data", len(data))
+            self._writer.write(data)
             asyncio.create_task(self._writer.drain())
         except TypeError as error:
             logging.error("Failed to parse outgoing message: %s", str(error))
+
+    @staticmethod
+    def _log(method, params, sensitive_params):
+        params = anonymise_sensitive_params(params, sensitive_params)
+        logging.info("Sending notification: method=%s, params=%s", method, params)
