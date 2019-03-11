@@ -34,6 +34,8 @@ pytest
 
 ## Changelog
 
+### 0.16
+* Do not log sensitive data.
 ### 0.15
 * `shutdown()` is called on socket disconnection.
 ### 0.14
