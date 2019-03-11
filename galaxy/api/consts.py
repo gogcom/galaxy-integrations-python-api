@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, Flag
 
 class Platform(Enum):
     Unknown = "unknown"
@@ -30,10 +30,10 @@ class LicenseType(Enum):
     FreeToPlay = "FreeToPlay"
     OtherUserLicense = "OtherUserLicense"
 
-class LocalGameState(Enum):
-    None_ = "None"
-    Installed = "Installed"
-    Running = "Running"
+class LocalGameState(Flag):
+    None_ = 0
+    Installed = 1
+    Running = 2
 
 class PresenceState(Enum):
     Unknown = "Unknown"

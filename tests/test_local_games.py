@@ -17,8 +17,9 @@ def test_success(plugin, readline, write):
     readline.side_effect = [json.dumps(request), ""]
 
     plugin.get_local_games.return_value = [
-        LocalGame("1", "Running"),
-        LocalGame("2", "Installed")
+        LocalGame("1", LocalGameState.Running),
+        LocalGame("2", LocalGameState.Installed),
+        LocalGame("3", LocalGameState.Installed | LocalGameState.Running)
     ]
     asyncio.run(plugin.run())
     plugin.get_local_games.assert_called_with()
@@ -31,11 +32,15 @@ def test_success(plugin, readline, write):
             "local_games" : [
                 {
                     "game_id": "1",
-                    "local_game_state": "Running"
+                    "local_game_state": LocalGameState.Running.value
                 },
                 {
                     "game_id": "2",
-                    "local_game_state": "Installed"
+                    "local_game_state": LocalGameState.Installed.value
+                },
+                {
+                    "game_id": "3",
+                    "local_game_state": (LocalGameState.Installed | LocalGameState.Running).value
                 }
             ]
         }
@@ -85,7 +90,7 @@ def test_local_game_state_update(plugin, write):
         "params": {
             "local_game": {
                 "game_id": "1",
-                "local_game_state": "Running"
+                "local_game_state": LocalGameState.Running.value
             }
         }
     }
