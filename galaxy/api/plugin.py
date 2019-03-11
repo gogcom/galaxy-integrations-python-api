@@ -171,7 +171,6 @@ class Plugin():
         """Plugin main coorutine"""
         async def pass_control():
             while self._active:
-                logging.debug("Passing control to plugin")
                 try:
                     self.tick()
                 except Exception:
