@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Dict, Optional
 
 from galaxy.api.consts import LicenseType, LocalGameState, PresenceState
 
@@ -7,6 +7,11 @@ from galaxy.api.consts import LicenseType, LocalGameState, PresenceState
 class Authentication():
     user_id: str
     user_name: str
+
+@dataclass
+class NextStep():
+    next_step: str
+    auth_params: Dict[str, str]
 
 @dataclass
 class LicenseInfo():

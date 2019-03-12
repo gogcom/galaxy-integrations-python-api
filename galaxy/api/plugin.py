@@ -49,6 +49,7 @@ class Plugin():
 
         # implemented by developer
         self._register_method("init_authentication", self.authenticate, sensitive_params=["stored_credentials"])
+        self._register_method("pass_login_credentials", self.pass_login_credentials)
         self._register_method(
             "import_owned_games",
             self.get_owned_games,
@@ -272,6 +273,9 @@ class Plugin():
         The method should return galaxy.api.types.Authentication
         or raise galaxy.api.types.LoginError on authentication failure.
         """
+        raise NotImplementedError()
+
+    async def pass_login_credentials(self, step, credentials, cookies):
         raise NotImplementedError()
 
     async def get_owned_games(self):
