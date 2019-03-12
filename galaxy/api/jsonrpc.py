@@ -25,7 +25,7 @@ class MethodNotFound(JsonRpcError):
 
 class InvalidParams(JsonRpcError):
     def __init__(self):
-        super().__init__(-32601, "Invalid params")
+        super().__init__(-32602, "Invalid params")
 
 class Timeout(JsonRpcError):
     def __init__(self):
