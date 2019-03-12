@@ -1,8 +1,6 @@
-from galaxy.api.jsonrpc import ApplicationError
+from galaxy.api.jsonrpc import ApplicationError, UnknownError
 
-class UnknownError(ApplicationError):
-    def __init__(self, data=None):
-        super().__init__(0, "Unknown error", data)
+UnknownError = UnknownError
 
 class AuthenticationRequired(ApplicationError):
     def __init__(self, data=None):

@@ -41,6 +41,10 @@ class ApplicationError(JsonRpcError):
             raise ValueError("The error code in reserved range")
         super().__init__(code, message, data)
 
+class UnknownError(ApplicationError):
+    def __init__(self, data=None):
+        super().__init__(0, "Unknown error", data)
+
 Request = namedtuple("Request", ["method", "params", "id"], defaults=[{}, None])
 Method = namedtuple("Method", ["callback", "internal", "sensitive_params"])
 
@@ -171,8 +175,9 @@ class Server():
                     self._send_error(request.id, MethodNotFound())
                 except JsonRpcError as error:
                     self._send_error(request.id, error)
-                except Exception: #pylint: disable=broad-except
+                except Exception as e: #pylint: disable=broad-except
                     logging.exception("Unexpected exception raised in plugin handler")
+                    self._send_error(request.id, UnknownError(str(e)))
 
             asyncio.create_task(handle())
 
