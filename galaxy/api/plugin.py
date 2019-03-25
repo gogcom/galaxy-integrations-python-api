@@ -298,7 +298,7 @@ class Plugin():
     async def get_users(self, user_id_list):
         raise NotImplementedError()
 
-    async def send_message(self, room_id, message):
+    async def send_message(self, room_id, message_text):
         raise NotImplementedError()
 
     async def mark_as_read(self, room_id, last_message_id):
