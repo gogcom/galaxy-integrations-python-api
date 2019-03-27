@@ -6,5 +6,5 @@ setup(
     description="Galaxy python plugin API",
     author='Galaxy team',
     author_email='galaxy@gog.com',
-    packages=find_packages()
+    packages=find_packages(exclude=["tests"])
 )
