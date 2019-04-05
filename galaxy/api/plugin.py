@@ -6,7 +6,6 @@ import dataclasses
 from enum import Enum
 from collections import OrderedDict
 import sys
-import os
 
 from galaxy.api.jsonrpc import Server, NotificationClient
 from galaxy.api.consts import Feature
@@ -320,29 +319,7 @@ class Plugin():
     async def get_game_times(self):
         raise NotImplementedError()
 
-def _prepare_logging(logger_file):
-    root = logging.getLogger()
-    root.setLevel(logging.DEBUG)
-    if logger_file:
-        # ensure destination folder exists
-        os.makedirs(os.path.dirname(os.path.abspath(logger_file)), exist_ok=True)
-        handler = logging.handlers.RotatingFileHandler(
-            logger_file,
-            mode="a",
-            maxBytes=10000000,
-            backupCount=10,
-            encoding="utf-8"
-        )
-    else:
-        handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    root.addHandler(handler)
-
 def create_and_run_plugin(plugin_class, argv):
-    logger_file = argv[3] if len(argv) >= 4 else None
-    _prepare_logging(logger_file)
-
     if len(argv) < 3:
         logging.critical("Not enough parameters, required: token, port")
         sys.exit(1)
