@@ -9,9 +9,17 @@ class Authentication():
     user_name: str
 
 @dataclass
+class Cookie():
+    name: str
+    value: str
+    domain: Optional[str] = None
+    path: Optional[str] = None
+
+@dataclass
 class NextStep():
     next_step: str
     auth_params: Dict[str, str]
+    cookies: Optional[List[Cookie]] = None
 
 @dataclass
 class LicenseInfo():
