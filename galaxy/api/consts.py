@@ -10,6 +10,7 @@ class Platform(Enum):
     Origin = "origin"
     Uplay = "uplay"
     Battlenet = "battlenet"
+    Epic = "epic"
 
 class Feature(Enum):
     Unknown = "Unknown"
