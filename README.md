@@ -34,6 +34,8 @@ pytest
 
 ## Changelog
 
+### 0.21
+* Add `Epic` platform.
 ### 0.16
 * Do not log sensitive data.
 * Return `LocalGameState` as int (possible combination of flags).
