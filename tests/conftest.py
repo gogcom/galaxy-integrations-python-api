@@ -6,7 +6,7 @@ import pytest
 
 from galaxy.api.plugin import Plugin
 from galaxy.api.consts import Platform
-from tests.async_mock import AsyncMock
+from galaxy.unittest.mock import AsyncMock
 
 @pytest.fixture()
 def reader():
