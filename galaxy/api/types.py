@@ -36,7 +36,7 @@ class Dlc():
 class Game():
     game_id: str
     game_title: str
-    dlcs: List[Dlc]
+    dlcs: Optional[List[Dlc]]
     license_info: LicenseInfo
 
 @dataclass
