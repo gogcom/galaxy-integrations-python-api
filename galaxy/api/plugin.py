@@ -77,8 +77,8 @@ class Plugin():
         self._register_method(
             "import_friends",
             self.get_friends,
-            result_name="user_info_list",
-            feature=Feature.ImportUsers
+            result_name="friend_info_list",
+            feature=Feature.ImportFriends
         )
         self._register_method(
             "import_user_infos",
@@ -227,16 +227,12 @@ class Plugin():
         self._notification_client.notify("local_game_status_changed", params)
 
     def add_friend(self, user):
-        params = {"user_info" : user}
+        params = {"friend_info" : user}
         self._notification_client.notify("friend_added", params)
 
     def remove_friend(self, user_id):
         params = {"user_id" : user_id}
         self._notification_client.notify("friend_removed", params)
-
-    def update_friend(self, user):
-        params = {"user_info" : user}
-        self._notification_client.notify("friend_updated", params)
 
     def update_room(self, room_id, unread_message_count=None, new_messages=None):
         params = {"room_id": room_id}
