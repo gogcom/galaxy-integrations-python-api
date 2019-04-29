@@ -162,12 +162,12 @@ class Server():
 
         if internal:
             # internal requests are handled immediately
-            response = callback(request.params)
+            response = callback(**request.params)
             self._send_response(request.id, response)
         else:
             async def handle():
                 try:
-                    result = await callback(request.params)
+                    result = await callback(**request.params)
                     self._send_response(request.id, result)
                 except TypeError:
                     self._send_error(request.id, InvalidParams())

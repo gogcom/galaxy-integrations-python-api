@@ -140,8 +140,8 @@ class Plugin():
 
     def _register_method(self, name, handler, result_name=None, internal=False, sensitive_params=False, feature=None):
         if internal:
-            def method(params):
-                result = handler(**params)
+            def method(*args, **kwargs):
+                result = handler(*args, **kwargs)
                 if result_name:
                     result = {
                         result_name: result
@@ -149,8 +149,8 @@ class Plugin():
                 return result
             self._server.register_method(name, method, True, sensitive_params)
         else:
-            async def method(params):
-                result = await handler(**params)
+            async def method(*args, **kwargs):
+                result = await handler(*args, **kwargs)
                 if result_name:
                     result = {
                         result_name: result
