@@ -6,7 +6,7 @@ import pytest
 
 from galaxy.api.plugin import Plugin
 from galaxy.api.consts import Platform
-from galaxy.unittest.mock import AsyncMock
+from galaxy.unittest.mock import AsyncMock, coroutine_mock
 
 @pytest.fixture()
 def reader():
@@ -57,7 +57,7 @@ def plugin(reader, writer):
 
     with ExitStack() as stack:
         for method in async_methods:
-            stack.enter_context(patch.object(Plugin, method, new_callable=AsyncMock))
+            stack.enter_context(patch.object(Plugin, method, new_callable=coroutine_mock))
         for method in methods:
             stack.enter_context(patch.object(Plugin, method))
         yield Plugin(Platform.Generic, "0.1", reader, writer, "token")

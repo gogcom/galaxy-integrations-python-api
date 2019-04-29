@@ -13,7 +13,7 @@ def test_success(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.get_owned_games.return_value = [
+    plugin.get_owned_games.coro.return_value = [
         Game("3", "Doom", None, LicenseInfo(LicenseType.SinglePurchase, None)),
         Game(
             "5",
@@ -75,7 +75,7 @@ def test_failure(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.get_owned_games.side_effect = UnknownError()
+    plugin.get_owned_games.coro.side_effect = UnknownError()
     asyncio.run(plugin.run())
     plugin.get_owned_games.assert_called_with()
     response = json.loads(write.call_args[0][0])

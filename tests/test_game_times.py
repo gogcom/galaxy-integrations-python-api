@@ -12,7 +12,7 @@ def test_success(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.get_game_times.return_value = [
+    plugin.get_game_times.coro.return_value = [
         GameTime("3", 60, 1549550504),
         GameTime("5", 10, 1549550502)
     ]
@@ -47,7 +47,7 @@ def test_failure(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.get_game_times.side_effect = UnknownError()
+    plugin.get_game_times.coro.side_effect = UnknownError()
     asyncio.run(plugin.run())
     plugin.get_game_times.assert_called_with()
     response = json.loads(write.call_args[0][0])

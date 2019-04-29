@@ -2,6 +2,7 @@ import asyncio
 from collections import namedtuple
 from collections.abc import Iterable
 import logging
+import inspect
 import json
 
 class JsonRpcError(Exception):
@@ -46,7 +47,7 @@ class UnknownError(ApplicationError):
         super().__init__(0, "Unknown error", data)
 
 Request = namedtuple("Request", ["method", "params", "id"], defaults=[{}, None])
-Method = namedtuple("Method", ["callback", "internal", "sensitive_params"])
+Method = namedtuple("Method", ["callback", "signature", "internal", "sensitive_params"])
 
 def anonymise_sensitive_params(params, sensitive_params):
     anomized_data = "****"
@@ -81,7 +82,7 @@ class Server():
         :param sensitive_params: list of parameters that will by anonymized before logging; if False - no params
         are considered sensitive, if True - all params are considered sensitive
         """
-        self._methods[name] = Method(callback, internal, sensitive_params)
+        self._methods[name] = Method(callback, inspect.signature(callback), internal, sensitive_params)
 
     def register_notification(self, name, callback, internal, sensitive_params=False):
         """
@@ -92,7 +93,7 @@ class Server():
         :param sensitive_params: list of parameters that will by anonymized before logging; if False - no params
         are considered sensitive, if True - all params are considered sensitive
         """
-        self._notifications[name] = Method(callback, internal, sensitive_params)
+        self._notifications[name] = Method(callback, inspect.signature(callback), internal, sensitive_params)
 
     def register_eof(self, callback):
         self._eof_listeners.append(callback)
@@ -138,15 +139,20 @@ class Server():
             logging.error("Received unknown notification: %s", request.method)
             return
 
-        callback, internal, sensitive_params = method
+        callback, signature, internal, sensitive_params = method
         self._log_request(request, sensitive_params)
+
+        try:
+            bound_args = signature.bind(**request.params)
+        except TypeError:
+            self._send_error(request.id, InvalidParams())
 
         if internal:
             # internal requests are handled immediately
-            callback(**request.params)
+            callback(*bound_args.args, **bound_args.kwargs)
         else:
             try:
-                asyncio.create_task(callback(**request.params))
+                asyncio.create_task(callback(*bound_args.args, **bound_args.kwargs))
             except Exception:
                 logging.exception("Unexpected exception raised in notification handler")
 
@@ -157,17 +163,22 @@ class Server():
             self._send_error(request.id, MethodNotFound())
             return
 
-        callback, internal, sensitive_params = method
+        callback, signature, internal, sensitive_params = method
         self._log_request(request, sensitive_params)
+
+        try:
+            bound_args = signature.bind(**request.params)
+        except TypeError:
+            self._send_error(request.id, InvalidParams())
 
         if internal:
             # internal requests are handled immediately
-            response = callback(**request.params)
+            response = callback(*bound_args.args, **bound_args.kwargs)
             self._send_response(request.id, response)
         else:
             async def handle():
                 try:
-                    result = await callback(**request.params)
+                    result = await callback(*bound_args.args, **bound_args.kwargs)
                     self._send_response(request.id, result)
                 except TypeError:
                     self._send_error(request.id, InvalidParams())

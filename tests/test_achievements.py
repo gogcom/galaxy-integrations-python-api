@@ -23,7 +23,7 @@ def test_success(plugin, readline, write):
         }
     }
     readline.side_effect = [json.dumps(request), ""]
-    plugin.get_unlocked_achievements.return_value = [
+    plugin.get_unlocked_achievements.coro.return_value = [
         Achievement(achievement_id="lvl10", unlock_time=1548421241),
         Achievement(achievement_name="Got level 20", unlock_time=1548422395),
         Achievement(achievement_id="lvl30", achievement_name="Got level 30", unlock_time=1548495633)
@@ -65,7 +65,7 @@ def test_failure(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.get_unlocked_achievements.side_effect = UnknownError()
+    plugin.get_unlocked_achievements.coro.side_effect = UnknownError()
     asyncio.run(plugin.run())
     plugin.get_unlocked_achievements.assert_called()
     response = json.loads(write.call_args[0][0])

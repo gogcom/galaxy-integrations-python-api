@@ -13,7 +13,7 @@ def test_get_friends_success(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.get_friends.return_value = [
+    plugin.get_friends.coro.return_value = [
         UserInfo(
             "3",
             True,
@@ -74,7 +74,7 @@ def test_get_friends_failure(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.get_friends.side_effect = UnknownError()
+    plugin.get_friends.coro.side_effect = UnknownError()
     asyncio.run(plugin.run())
     plugin.get_friends.assert_called_with()
     response = json.loads(write.call_args[0][0])
@@ -164,7 +164,7 @@ def test_get_users_success(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.get_users.return_value = [
+    plugin.get_users.coro.return_value = [
         UserInfo("5", False, "Ula", "http://avatar.png", Presence(PresenceState.Offline))
     ]
     asyncio.run(plugin.run())
@@ -200,7 +200,7 @@ def test_get_users_failure(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.get_users.side_effect = UnknownError()
+    plugin.get_users.coro.side_effect = UnknownError()
     asyncio.run(plugin.run())
     plugin.get_users.assert_called_with(user_id_list=["10", "11", "12"])
     response = json.loads(write.call_args[0][0])

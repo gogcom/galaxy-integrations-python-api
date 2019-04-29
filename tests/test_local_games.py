@@ -16,7 +16,7 @@ def test_success(plugin, readline, write):
 
     readline.side_effect = [json.dumps(request), ""]
 
-    plugin.get_local_games.return_value = [
+    plugin.get_local_games.coro.return_value = [
         LocalGame("1", LocalGameState.Running),
         LocalGame("2", LocalGameState.Installed),
         LocalGame("3", LocalGameState.Installed | LocalGameState.Running)
@@ -61,7 +61,7 @@ def test_failure(plugin, readline, write, error, code, message):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.get_local_games.side_effect = error()
+    plugin.get_local_games.coro.side_effect = error()
     asyncio.run(plugin.run())
     plugin.get_local_games.assert_called_with()
     response = json.loads(write.call_args[0][0])

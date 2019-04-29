@@ -18,7 +18,7 @@ def test_success(plugin, readline, write):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.authenticate.return_value = Authentication("132", "Zenek")
+    plugin.authenticate.coro.return_value = Authentication("132", "Zenek")
     asyncio.run(plugin.run())
     plugin.authenticate.assert_called_with()
     response = json.loads(write.call_args[0][0])
@@ -56,7 +56,7 @@ def test_failure(plugin, readline, write, error, code, message):
     }
 
     readline.side_effect = [json.dumps(request), ""]
-    plugin.authenticate.side_effect = error()
+    plugin.authenticate.coro.side_effect = error()
     asyncio.run(plugin.run())
     plugin.authenticate.assert_called_with()
     response = json.loads(write.call_args[0][0])
@@ -82,7 +82,7 @@ def test_stored_credentials(plugin, readline, write):
         }
     }
     readline.side_effect = [json.dumps(request), ""]
-    plugin.authenticate.return_value = Authentication("132", "Zenek")
+    plugin.authenticate.coro.return_value = Authentication("132", "Zenek")
     asyncio.run(plugin.run())
     plugin.authenticate.assert_called_with(stored_credentials={"token": "ABC"})
     write.assert_called()
