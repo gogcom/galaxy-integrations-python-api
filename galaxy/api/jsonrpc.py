@@ -180,8 +180,6 @@ class Server():
                 try:
                     result = await callback(*bound_args.args, **bound_args.kwargs)
                     self._send_response(request.id, result)
-                except TypeError:
-                    self._send_error(request.id, InvalidParams())
                 except NotImplementedError:
                     self._send_error(request.id, MethodNotFound())
                 except JsonRpcError as error:
