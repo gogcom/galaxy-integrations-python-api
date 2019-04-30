@@ -24,6 +24,7 @@ class Feature(Enum):
     Chat = "Chat"
     ImportUsers = "ImportUsers"
     VerifyGame = "VerifyGame"
+    ImportFriends = "ImportFriends"
 
 class LicenseType(Enum):
     Unknown = "Unknown"

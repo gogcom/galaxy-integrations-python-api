@@ -69,6 +69,11 @@ class UserInfo():
     presence: Presence
 
 @dataclass
+class FriendInfo():
+    user_id: str
+    user_name: str
+
+@dataclass
 class Room():
     room_id: str
     unread_message_count: int
