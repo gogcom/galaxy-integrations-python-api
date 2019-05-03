@@ -20,6 +20,7 @@ class NextStep():
     next_step: str
     auth_params: Dict[str, str]
     cookies: Optional[List[Cookie]] = None
+    js: Optional[Dict[str, List[str]]] = None
 
 @dataclass
 class LicenseInfo():
