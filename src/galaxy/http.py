@@ -10,7 +10,7 @@ from galaxy.api.errors import (
     BackendTimeout, BackendNotAvailable, BackendError, NetworkError, UnknownError
 )
 
-class AuthenticatedHttpClient:
+class HttpClient:
     def __init__(self, limit=20, timeout=aiohttp.ClientTimeout(total=60)):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ssl_context.load_verify_locations(certifi.where())
