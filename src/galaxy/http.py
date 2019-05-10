@@ -27,6 +27,8 @@ class AuthenticatedHttpClient:
             raise BackendTimeout()
         except aiohttp.ClientConnectionError:
             raise NetworkError()
+        except aiohttp.ServerDisconnectedError:
+            raise BackendNotAvailable()
         if response.status == HTTPStatus.UNAUTHORIZED:
             raise AuthenticationRequired()
         if response.status == HTTPStatus.FORBIDDEN:
