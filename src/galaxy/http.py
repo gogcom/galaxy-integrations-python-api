@@ -11,11 +11,11 @@ from galaxy.api.errors import (
 )
 
 class HttpClient:
-    def __init__(self, limit=20, timeout=aiohttp.ClientTimeout(total=60)):
+    def __init__(self, limit=20, timeout=aiohttp.ClientTimeout(total=60), cookie_jar=None):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ssl_context.load_verify_locations(certifi.where())
         connector = aiohttp.TCPConnector(limit=limit, timeout=timeout, ssl=ssl_context)
-        self._session = aiohttp.ClientSession(connector=connector)
+        self._session = aiohttp.ClientSession(connector=connector, cookie_jar=cookie_jar)
 
     async def close(self):
         await self._session.close()
