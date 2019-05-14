@@ -74,6 +74,10 @@ class Plugin():
             feature=Feature.ImportAchievements
         )
         self._register_method(
+            "start_achievements_import",
+            self.start_achievements_import,
+        )
+        self._register_method(
             "import_local_games",
             self.get_local_games,
             result_name="local_games",
@@ -126,12 +130,15 @@ class Plugin():
             result_name="messages",
             feature=Feature.Chat
         )
-
         self._register_method(
             "import_game_times",
             self.get_game_times,
             result_name="game_times",
             feature=Feature.ImportGameTime
+        )
+        self._register_method(
+            "start_game_times_import",
+            self.start_game_times_import,
         )
 
     @property
