@@ -9,6 +9,7 @@ import sys
 
 from galaxy.api.jsonrpc import Server, NotificationClient
 from galaxy.api.consts import Feature
+from galaxy.api.errors import UnknownError, ImportInProgress
 
 class JSONEncoder(json.JSONEncoder):
     def default(self, o): # pylint: disable=method-hidden
@@ -40,6 +41,9 @@ class Plugin():
         def eof_handler():
             self._shutdown()
         self._server.register_eof(eof_handler)
+
+        self._achievements_import_in_progress = False
+        self._game_times_import_in_progress = False
 
         # internal
         self._register_method("shutdown", self._shutdown, internal=True)
@@ -230,6 +234,26 @@ class Plugin():
         }
         self._notification_client.notify("achievement_unlocked", params)
 
+    def game_achievements_import_success(self, game_id, achievements):
+        params = {
+            "game_id": game_id,
+            "unlocked_achievements": achievements
+        }
+        self._notification_client.notify("game_achievements_import_success", params)
+
+    def game_achievements_import_failure(self, game_id, error):
+        params = {
+            "game_id": game_id,
+            "error": {
+                "code": error.code,
+                "message": error.message
+            }
+        }
+        self._notification_client.notify("game_achievements_import_failure", params)
+
+    def achievements_import_finished(self):
+        self._notification_client.notify("achievements_import_finished", None)
+
     def update_local_game_status(self, local_game):
         params = {"local_game" : local_game}
         self._notification_client.notify("local_game_status_changed", params)
@@ -253,6 +277,23 @@ class Plugin():
     def update_game_time(self, game_time):
         params = {"game_time" : game_time}
         self._notification_client.notify("game_time_updated", params)
+
+    def game_time_import_success(self, game_time):
+        params = {"game_time" : game_time}
+        self._notification_client.notify("game_time_import_success", params)
+
+    def game_time_import_failure(self, game_id, error):
+        params = {
+            "game_id": game_id,
+            "error": {
+                "code": error.code,
+                "message": error.message
+            }
+        }
+        self._notification_client.notify("game_time_import_failure", params)
+
+    def game_times_import_finished(self):
+        self._notification_client.notify("game_times_import_finished", None)
 
     def lost_authentication(self):
         self._notification_client.notify("authentication_lost", None)
@@ -286,6 +327,28 @@ class Plugin():
 
     async def get_unlocked_achievements(self, game_id):
         raise NotImplementedError()
+
+    async def start_achievements_import(self, game_ids):
+        if self._achievements_import_in_progress:
+            raise ImportInProgress()
+
+        async def import_games_achievements(game_ids):
+            async def import_game_achievements(game_id):
+                try:
+                    achievements = await self.get_unlocked_achievements(game_id)
+                    self.game_achievements_import_success(game_id, achievements)
+                except Exception as error:
+                    self.game_achievements_import_failure(game_id, error)
+
+            try:
+                imports = [import_game_achievements(game_id) for game_id in game_ids]
+                await asyncio.gather(*imports)
+            finally:
+                self.achievements_import_finished()
+                self._achievements_import_in_progress = False
+
+        asyncio.create_task(import_games_achievements(game_ids))
+        self._achievements_import_in_progress = True
 
     async def get_local_games(self):
         raise NotImplementedError()
@@ -322,6 +385,32 @@ class Plugin():
 
     async def get_game_times(self):
         raise NotImplementedError()
+
+    async def start_game_times_import(self, game_ids):
+        if self._game_times_import_in_progress:
+            raise ImportInProgress()
+
+        async def import_game_times(game_ids):
+            try:
+                game_times = await self.get_game_times()
+                game_ids_set = set(game_ids)
+                for game_time in game_times:
+                    if game_time.game_id not in game_ids_set:
+                        continue
+                    self.game_time_import_success(game_time)
+                    game_ids_set.discard(game_time.game_id)
+                for game_id in game_ids_set:
+                    self.game_time_import_failure(game_id, UnknownError())
+
+            except Exception as error:
+                for game_id in game_ids:
+                    self.game_time_import_failure(game_id, error)
+            finally:
+                self.game_times_import_finished()
+                self._game_times_import_in_progress = False
+
+        asyncio.create_task(import_game_times(game_ids))
+        self._game_times_import_in_progress = True
 
 def create_and_run_plugin(plugin_class, argv):
     if len(argv) < 3:

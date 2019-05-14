@@ -77,3 +77,7 @@ class IncoherentLastMessage(ApplicationError):
 class MessageNotFound(ApplicationError):
     def __init__(self, data=None):
         super().__init__(500, "Message not found", data)
+
+class ImportInProgress(ApplicationError):
+    def __init__(self, data=None):
+        super().__init__(600, "Import already in progress", data)

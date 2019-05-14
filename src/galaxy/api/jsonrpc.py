@@ -12,6 +12,9 @@ class JsonRpcError(Exception):
         self.data = data
         super().__init__()
 
+    def __eq__(self, other):
+        return self.code == other.code and self.message == other.message and self.data == other.data
+
 class ParseError(JsonRpcError):
     def __init__(self):
         super().__init__(-32700, "Parse error")
