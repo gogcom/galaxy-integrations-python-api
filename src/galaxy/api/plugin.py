@@ -47,8 +47,16 @@ class Plugin():
         self._register_method("ping", self._ping, internal=True)
 
         # implemented by developer
-        self._register_method("init_authentication", self.authenticate, sensitive_params=["stored_credentials"])
-        self._register_method("pass_login_credentials", self.pass_login_credentials)
+        self._register_method(
+            "init_authentication",
+            self.authenticate,
+            sensitive_params=["stored_credentials"]
+        )
+        self._register_method(
+            "pass_login_credentials",
+            self.pass_login_credentials,
+            sensitive_params=["cookies", "credentials"]
+        )
         self._register_method(
             "import_owned_games",
             self.get_owned_games,
