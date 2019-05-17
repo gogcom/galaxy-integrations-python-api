@@ -346,6 +346,8 @@ def create_and_run_plugin(plugin_class, argv):
 
     async def coroutine():
         reader, writer = await asyncio.open_connection("127.0.0.1", port)
+        extra_info = writer.get_extra_info('sockname')
+        logging.info("Using local address: %s:%u", *extra_info)
         plugin = plugin_class(reader, writer, token)
         await plugin.run()
 
