@@ -7,7 +7,7 @@ import certifi
 
 from galaxy.api.errors import (
     AccessDenied, AuthenticationRequired,
-    BackendTimeout, BackendNotAvailable, BackendError, NetworkError, UnknownError
+    BackendTimeout, BackendNotAvailable, BackendError, NetworkError, UnknownBackendResponse, UnknownError
 )
 
 class HttpClient:
@@ -25,10 +25,14 @@ class HttpClient:
             response = await self._session.request(method, *args, **kwargs)
         except asyncio.TimeoutError:
             raise BackendTimeout()
-        except aiohttp.ClientConnectionError:
-            raise NetworkError()
         except aiohttp.ServerDisconnectedError:
             raise BackendNotAvailable()
+        except aiohttp.ClientConnectionError:
+            raise NetworkError()
+        except aiohttp.ContentTypeError:
+            raise UnknownBackendResponse()
+        except aiohttp.ClientError:
+            raise UnknownError()
         if response.status == HTTPStatus.UNAUTHORIZED:
             raise AuthenticationRequired()
         if response.status == HTTPStatus.FORBIDDEN:
