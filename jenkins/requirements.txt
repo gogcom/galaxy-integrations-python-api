@@ -1,0 +1,1 @@
+git+ssh://git@gitlab.gog.com/galaxy-client/github-exporter.git@v0.1
