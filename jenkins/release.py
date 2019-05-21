@@ -11,7 +11,7 @@ SOURCE_BRANCH = os.environ["GIT_REFSPEC"]
 GITLAB_USERNAME = "galaxy-client"
 GITLAB_REPO_NAME = "galaxy-plugin-api"
 
-def version_provider():
+def version_provider(_):
     return sys.argv[1]
 
 gh_version = transfer_repo(
