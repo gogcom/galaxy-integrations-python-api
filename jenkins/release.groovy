@@ -6,8 +6,8 @@ stage('Upload to github')
         withPythonEnv('python') {
             withCredentials([usernamePassword(credentialsId: 'github_friendsofgalaxy', usernameVariable: 'GITHUB_USERNAME', passwordVariable: 'GITHUB_TOKEN')]) {
                 bat 'pip install -r jenkins/requirements.txt'
-                version = bat(returnStdout: true, script: 'python setup.py --version').trim()
-                bat "python jenkins/release.py ${version}"
+                def version = bat(returnStdout: true, script: 'python setup.py --version').trim()
+                bat "python jenkins/release.py $version"
             }
         }
     }
