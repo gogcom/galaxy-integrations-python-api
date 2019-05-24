@@ -339,23 +339,27 @@ class Plugin():
         if self._achievements_import_in_progress:
             raise ImportInProgress()
 
-        async def import_games_achievements(game_ids):
-            async def import_game_achievements(game_id):
-                try:
-                    achievements = await self.get_unlocked_achievements(game_id)
-                    self.game_achievements_import_success(game_id, achievements)
-                except Exception as error:
-                    self.game_achievements_import_failure(game_id, error)
-
+        async def import_games_achievements_task(game_ids):
             try:
-                imports = [import_game_achievements(game_id) for game_id in game_ids]
-                await asyncio.gather(*imports)
+                await self.import_games_achievements(game_ids)
             finally:
                 self.achievements_import_finished()
                 self._achievements_import_in_progress = False
 
-        asyncio.create_task(import_games_achievements(game_ids))
+        asyncio.create_task(import_games_achievements_task(game_ids))
         self._achievements_import_in_progress = True
+
+    async def import_games_achievements(self, game_ids):
+        """Call game_achievements_import_success/game_achievements_import_failure for each game_id on the list"""
+        async def import_game_achievements(game_id):
+            try:
+                achievements = await self.get_unlocked_achievements(game_id)
+                self.game_achievements_import_success(game_id, achievements)
+            except Exception as error:
+                self.game_achievements_import_failure(game_id, error)
+
+        imports = [import_game_achievements(game_id) for game_id in game_ids]
+        await asyncio.gather(*imports)
 
     async def get_local_games(self):
         raise NotImplementedError()
@@ -397,27 +401,31 @@ class Plugin():
         if self._game_times_import_in_progress:
             raise ImportInProgress()
 
-        async def import_game_times(game_ids):
+        async def import_game_times_task(game_ids):
             try:
-                game_times = await self.get_game_times()
-                game_ids_set = set(game_ids)
-                for game_time in game_times:
-                    if game_time.game_id not in game_ids_set:
-                        continue
-                    self.game_time_import_success(game_time)
-                    game_ids_set.discard(game_time.game_id)
-                for game_id in game_ids_set:
-                    self.game_time_import_failure(game_id, UnknownError())
-
-            except Exception as error:
-                for game_id in game_ids:
-                    self.game_time_import_failure(game_id, error)
+                await self.import_game_times(game_ids)
             finally:
                 self.game_times_import_finished()
                 self._game_times_import_in_progress = False
 
-        asyncio.create_task(import_game_times(game_ids))
+        asyncio.create_task(import_game_times_task(game_ids))
         self._game_times_import_in_progress = True
+
+    async def import_game_times(self, game_ids):
+        """Call game_time_import_success/game_time_import_failure for each game_id on the list"""
+        try:
+            game_times = await self.get_game_times()
+            game_ids_set = set(game_ids)
+            for game_time in game_times:
+                if game_time.game_id not in game_ids_set:
+                    continue
+                self.game_time_import_success(game_time)
+                game_ids_set.discard(game_time.game_id)
+            for game_id in game_ids_set:
+                self.game_time_import_failure(game_id, UnknownError())
+        except Exception as error:
+            for game_id in game_ids:
+                self.game_time_import_failure(game_id, error)
 
 def create_and_run_plugin(plugin_class, argv):
     if len(argv) < 3:
