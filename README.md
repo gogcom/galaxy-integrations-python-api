@@ -1,8 +1,10 @@
-# Galaxy python plugin API
+# GOG Galaxy - Community Integration - Python API
 
-## Usage
+This document is still work in progress.
 
-Implement plugin:
+## Basic Usage
+
+Basic implementation:
 
 ```python
 import asyncio
@@ -15,10 +17,10 @@ class PluginExample(Plugin):
 
 # run plugin event loop
 if __name__ == "__main__":
-    asyncio.run(MockPlugin().run())
+    asyncio.run(PluginExample().run())
 ```
 
-Use [pyinstaller](https://www.pyinstaller.org/) to create plugin executbale.
+Use [pyinstaller](https://www.pyinstaller.org/) to create plugin executable.
 
 ## Development
 
@@ -31,11 +33,11 @@ Run tests:
 ```bash
 pytest
 ```
+## Methods Documentation
+TODO
 
 ## Changelog
 
-### 0.21
-* Add `Epic` platform.
 ### 0.16
 * Do not log sensitive data.
 * Return `LocalGameState` as int (possible combination of flags).
