@@ -20,8 +20,6 @@ if __name__ == "__main__":
     asyncio.run(PluginExample().run())
 ```
 
-Use [pyinstaller](https://www.pyinstaller.org/) to create plugin executable.
-
 ## Development
 
 Install required packages:
