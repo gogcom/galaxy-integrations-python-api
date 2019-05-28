@@ -2,10 +2,10 @@ import os
 import sys
 from galaxy.github.exporter import transfer_repo
 
-GITHUB_USERNAME = "FriendsOfGalaxy"
-GITHUB_EMAIL = "friendsofgalaxy@gmail.com"
+GITHUB_USERNAME = "GOG Galaxy SDK Team"
+GITHUB_EMAIL = "galaxy-sdk@gog.com"
 GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
-GITHUB_REPO_NAME = "galaxy-plugin-api"
+GITHUB_REPO_NAME = "galaxy-integrations-python-api"
 SOURCE_BRANCH = os.environ["GIT_REFSPEC"]
 
 GITLAB_USERNAME = "galaxy-client"
