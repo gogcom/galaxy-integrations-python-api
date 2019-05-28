@@ -19,8 +19,8 @@ gh_version = transfer_repo(
     source_repo_spec="git@gitlab.gog.com:{}/{}.git".format(GITLAB_USERNAME, GITLAB_REPO_NAME),
     source_include_elements=["src", "tests", "requirements.txt", ".gitignore", "*.md", "pytest.ini"],
     source_branch=SOURCE_BRANCH,
-    dest_repo_spec="https://{}:{}@github.com/{}/{}.git".format(GITHUB_USERNAME, GITHUB_TOKEN, GITHUB_USERNAME, GITHUB_REPO_NAME),
+    dest_repo_spec="https://{}:{}@github.com/{}/{}.git".format(GITHUB_USERNAME, GITHUB_TOKEN, "gogcom", GITHUB_REPO_NAME),
     dest_branch="master",
     dest_user_email=GITHUB_EMAIL,
-    dest_user_name=GITLAB_USERNAME
+    dest_user_name="GOG Galaxy SDK Team"
 )
