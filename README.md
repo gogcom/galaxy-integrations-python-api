@@ -33,13 +33,3 @@ pytest
 ```
 ## Methods Documentation
 TODO
-
-## Changelog
-
-### 0.16
-* Do not log sensitive data.
-* Return `LocalGameState` as int (possible combination of flags).
-### 0.15
-* `shutdown()` is called on socket disconnection.
-### 0.14
-* Added required version parameter to Plugin constructor.
