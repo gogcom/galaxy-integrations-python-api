@@ -1,0 +1,8 @@
+-e .
+pytest==4.2.0
+pytest-asyncio==0.10.0
+pytest-mock==1.10.3
+pytest-flakes==4.0.0
+# because of pip bug https://github.com/pypa/pip/issues/4780
+aiohttp==3.5.4
+certifi==2019.3.9
