@@ -1,10 +1,26 @@
 # GOG Galaxy - Community Integration - Python API
 
-This document is still work in progress.
+This Python library allows to easily build community integrations for various gaming platforms with GOG Galaxy 2.0.
 
-## Basic Usage
+Each integration in GOG Galaxy 2.0 comes as a separate Python script, and is launched as a separate process, that needs to communicate with main instance of GOG Galaxy 2.0.
 
-Basic implementation:
+The provided features are:
+
+- multistep authorisation using a browser built into GOG Galaxy 2.0
+- support for GOG Galaxy 2.0 features:
+    - importing owned and detecting installed games
+    - installing and launching games
+    - importing achievements and game time
+    - importing friends lists and statuses
+    - importing friends recomendations list
+    - receiving and sending chat messages
+- cache storage
+
+## Basic usage
+
+Eeach integration should inherit from the :class:`~galaxy.api.plugin.Plugin` class. Supported methods like :meth:`~galaxy.api.plugin.Plugin.get_owned_games` should be overwritten - they are called from the GOG Galaxy client in the appropriate times.
+Each of those method can raise exceptions inherited from the :exc:`~galaxy.api.jsonrpc.ApplicationError`.
+Communication between an integration and the client is also possible with the use of notifications, for example: :meth:`~galaxy.api.plugin.Plugin.update_local_game_status`.
 
 ```python
 import sys
@@ -33,7 +49,11 @@ if __name__ == "__main__":
     main()
 ```
 
-Plugin should be deployed with manifest:
+## Deployment
+
+The client has a built-in Python 3.7 interpreter, so the integrations are delivered as `.py` files.
+The additional `manifest.json` file is required:
+
 ```json
 {
     "name": "Example plugin",
@@ -47,21 +67,6 @@ Plugin should be deployed with manifest:
     "script": "plugin.py"
 }
 ```
-
-## Development
-
-Install required packages:
-```bash
-pip install -r requirements.txt
-```
-
-Run tests:
-```bash
-pytest
-```
-## Methods Documentation
-TODO
-
 ## Legal Notice
 
-By integrating or attempting to integrate any applications or content with or into GOG Galaxy® 2.0. you represent that such application or content is your original creation (other than any software made available by GOG) and/or that you have all necessary rights to grant such applicable rights to the relevant community integration to GOG and to GOG Galaxy 2.0 end users for the purpose of use of such community integration and that such community integration comply with any third party license and other requirements including compliance with applicable laws.
+By integrating or attempting to integrate any applications or content with or into GOG Galaxy 2.0. you represent that such application or content is your original creation (other than any software made available by GOG) and/or that you have all necessary rights to grant such applicable rights to the relevant community integration to GOG and to GOG Galaxy 2.0 end users for the purpose of use of such community integration and that such community integration comply with any third party license and other requirements including compliance with applicable laws.
