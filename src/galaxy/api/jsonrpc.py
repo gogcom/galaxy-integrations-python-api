@@ -79,22 +79,24 @@ class Server():
     def register_method(self, name, callback, internal, sensitive_params=False):
         """
         Register method
+
         :param name:
         :param callback:
         :param internal: if True the callback will be processed immediately (synchronously)
-        :param sensitive_params: list of parameters that will by anonymized before logging; if False - no params
-        are considered sensitive, if True - all params are considered sensitive
+        :param sensitive_params: list of parameters that are anonymized before logging; \
+            if False - no params are considered sensitive, if True - all params are considered sensitive
         """
         self._methods[name] = Method(callback, inspect.signature(callback), internal, sensitive_params)
 
     def register_notification(self, name, callback, internal, sensitive_params=False):
         """
         Register notification
+
         :param name:
         :param callback:
         :param internal: if True the callback will be processed immediately (synchronously)
-        :param sensitive_params: list of parameters that will by anonymized before logging; if False - no params
-        are considered sensitive, if True - all params are considered sensitive
+        :param sensitive_params: list of parameters that are anonymized before logging; \
+            if False - no params are considered sensitive, if True - all params are considered sensitive
         """
         self._notifications[name] = Method(callback, inspect.signature(callback), internal, sensitive_params)
 
@@ -187,7 +189,7 @@ class Server():
                     self._send_error(request.id, MethodNotFound())
                 except JsonRpcError as error:
                     self._send_error(request.id, error)
-                except Exception as e: #pylint: disable=broad-except
+                except Exception as e:  #pylint: disable=broad-except
                     logging.exception("Unexpected exception raised in plugin handler")
                     self._send_error(request.id, UnknownError(str(e)))
 
@@ -256,10 +258,11 @@ class NotificationClient():
     def notify(self, method, params, sensitive_params=False):
         """
         Send notification
+
         :param method:
         :param params:
-        :param sensitive_params: list of parameters that will by anonymized before logging; if False - no params
-        are considered sensitive, if True - all params are considered sensitive
+        :param sensitive_params: list of parameters that are anonymized before logging; \
+            if False - no params are considered sensitive, if True - all params are considered sensitive
         """
         notification = {
             "jsonrpc": "2.0",
