@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="galaxy.plugin.api",
-    version="0.32.0",
+    version="0.32.1",
     description="GOG Galaxy Integrations Python API",
     author='Galaxy team',
     author_email='galaxy@gog.com',

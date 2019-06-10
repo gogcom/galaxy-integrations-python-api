@@ -1,8 +1,12 @@
-# GOG Galaxy - Community Integration - Python API
+# GOG Galaxy Integrations Python API
 
 This Python library allows to easily build community integrations for various gaming platforms with GOG Galaxy 2.0.
 
-Each integration in GOG Galaxy 2.0 comes as a separate Python script, and is launched as a separate process, that needs to communicate with main instance of GOG Galaxy 2.0.
+- refer to our <a href='https://galaxy-integrations-python-api.readthedocs.io'>documentation</a>
+
+## Features
+
+Each integration in GOG Galaxy 2.0 comes as a separate Python script, and is launched as a separate process, that which needs to communicate with main instance of GOG Galaxy 2.0.
 
 The provided features are:
 
@@ -69,4 +73,4 @@ The additional `manifest.json` file is required:
 ```
 ## Legal Notice
 
-By integrating or attempting to integrate any applications or content with or into GOG Galaxy 2.0. you represent that such application or content is your original creation (other than any software made available by GOG) and/or that you have all necessary rights to grant such applicable rights to the relevant community integration to GOG and to GOG Galaxy 2.0 end users for the purpose of use of such community integration and that such community integration comply with any third party license and other requirements including compliance with applicable laws.
+By integrating or attempting to integrate any applications or content with or into GOG Galaxy 2.0 you represent that such application or content is your original creation (other than any software made available by GOG) and/or that you have all necessary rights to grant such applicable rights to the relevant community integration to GOG and to GOG Galaxy 2.0 end users for the purpose of use of such community integration and that such community integration comply with any third party license and other requirements including compliance with applicable laws.
