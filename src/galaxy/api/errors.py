@@ -54,18 +54,6 @@ class AccessDenied(ApplicationError):
     def __init__(self, data=None):
         super().__init__(106, "Access denied", data)
 
-class ParentalControlBlock(ApplicationError):
-    def __init__(self, data=None):
-        super().__init__(107, "Parental control block", data)
-
-class DeviceBlocked(ApplicationError):
-    def __init__(self, data=None):
-        super().__init__(108, "Device blocked", data)
-
-class RegionBlocked(ApplicationError):
-    def __init__(self, data=None):
-        super().__init__(109, "Region blocked", data)
-
 class FailedParsingManifest(ApplicationError):
     def __init__(self, data=None):
         super().__init__(200, "Failed parsing manifest", data)

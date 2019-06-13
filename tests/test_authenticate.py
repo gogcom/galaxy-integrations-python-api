@@ -6,8 +6,7 @@ import pytest
 from galaxy.api.types import Authentication
 from galaxy.api.errors import (
     UnknownError, InvalidCredentials, NetworkError, LoggedInElsewhere, ProtocolError,
-    BackendNotAvailable, BackendTimeout, BackendError, TemporaryBlocked, Banned, AccessDenied,
-    ParentalControlBlock, DeviceBlocked, RegionBlocked
+    BackendNotAvailable, BackendTimeout, BackendError, TemporaryBlocked, Banned, AccessDenied
 )
 
 def test_success(plugin, readline, write):
@@ -44,9 +43,6 @@ def test_success(plugin, readline, write):
     pytest.param(TemporaryBlocked, 104, "Temporary blocked", id="temporary_blocked"),
     pytest.param(Banned, 105, "Banned", id="banned"),
     pytest.param(AccessDenied, 106, "Access denied", id="access_denied"),
-    pytest.param(ParentalControlBlock, 107, "Parental control block", id="parental_control_clock"),
-    pytest.param(DeviceBlocked, 108, "Device blocked", id="device_blocked"),
-    pytest.param(RegionBlocked, 109, "Region blocked", id="region_blocked")
 ])
 def test_failure(plugin, readline, write, error, code, message):
     request = {
