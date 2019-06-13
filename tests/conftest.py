@@ -33,6 +33,7 @@ def write(writer):
 def plugin(reader, writer):
     """Return plugin instance with all feature methods mocked"""
     async_methods = (
+        "handshake_complete",
         "authenticate",
         "get_owned_games",
         "get_unlocked_achievements",

@@ -6,9 +6,10 @@ import aiohttp
 import certifi
 
 from galaxy.api.errors import (
-    AccessDenied, AuthenticationRequired,
-    BackendTimeout, BackendNotAvailable, BackendError, NetworkError, UnknownBackendResponse, UnknownError
+    AccessDenied, AuthenticationRequired, BackendTimeout, BackendNotAvailable, BackendError, NetworkError,
+    TooManyRequests, UnknownBackendResponse, UnknownError
 )
+
 
 class HttpClient:
     def __init__(self, limit=20, timeout=aiohttp.ClientTimeout(total=60), cookie_jar=None):
@@ -39,6 +40,8 @@ class HttpClient:
             raise AccessDenied()
         if response.status == HTTPStatus.SERVICE_UNAVAILABLE:
             raise BackendNotAvailable()
+        if response.status == HTTPStatus.TOO_MANY_REQUESTS:
+            raise TooManyRequests()
         if response.status >= 500:
             raise BackendError()
         if response.status >= 400:

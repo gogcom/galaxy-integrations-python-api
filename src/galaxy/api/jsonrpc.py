@@ -54,17 +54,15 @@ Method = namedtuple("Method", ["callback", "signature", "internal", "sensitive_p
 
 def anonymise_sensitive_params(params, sensitive_params):
     anomized_data = "****"
-    if not sensitive_params:
-        return params
+
+    if isinstance(sensitive_params, bool):
+        if sensitive_params:
+            return {k:anomized_data for k,v in params.items()}
 
     if isinstance(sensitive_params, Iterable):
-        anomized_params = params.copy()
-        for key in anomized_params.keys():
-            if key in sensitive_params:
-                anomized_params[key] = anomized_data
-        return anomized_params
+        return {k: anomized_data if k in sensitive_params else v for k, v in params.items()}
 
-    return anomized_data
+    return params
 
 class Server():
     def __init__(self, reader, writer, encoder=json.JSONEncoder()):
