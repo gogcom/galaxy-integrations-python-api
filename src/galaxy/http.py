@@ -4,6 +4,7 @@ from http import HTTPStatus
 
 import aiohttp
 import certifi
+import logging
 
 from galaxy.api.errors import (
     AccessDenied, AuthenticationRequired, BackendTimeout, BackendNotAvailable, BackendError, NetworkError,
@@ -21,9 +22,9 @@ class HttpClient:
     async def close(self):
         await self._session.close()
 
-    async def request(self, method, *args, **kwargs):
+    async def request(self, method, url, *args, **kwargs):
         try:
-            response = await self._session.request(method, *args, **kwargs)
+            response = await self._session.request(method, url, *args, **kwargs)
         except asyncio.TimeoutError:
             raise BackendTimeout()
         except aiohttp.ServerDisconnectedError:
@@ -33,6 +34,8 @@ class HttpClient:
         except aiohttp.ContentTypeError:
             raise UnknownBackendResponse()
         except aiohttp.ClientError:
+            logging.exception(
+                "Caught exception while running {} request for {}".format(method, url))
             raise UnknownError()
         if response.status == HTTPStatus.UNAUTHORIZED:
             raise AuthenticationRequired()
@@ -45,6 +48,8 @@ class HttpClient:
         if response.status >= 500:
             raise BackendError()
         if response.status >= 400:
+            logging.warning(
+                "Got status {} while running {} request for {}".format(response.status, method, url))
             raise UnknownError()
 
         return response
