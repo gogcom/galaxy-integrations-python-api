@@ -20,6 +20,12 @@ The provided features are:
     - receiving and sending chat messages
 - cache storage
 
+## Platform Id's
+
+Each integration can implement only one platform.
+
+[Contribution guidelines for this project](PLATFORM_IDs.md)
+
 ## Basic usage
 
 Eeach integration should inherit from the :class:`~galaxy.api.plugin.Plugin` class. Supported methods like :meth:`~galaxy.api.plugin.Plugin.get_owned_games` should be overwritten - they are called from the GOG Galaxy client in the appropriate times.
