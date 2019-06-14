@@ -55,8 +55,20 @@ if __name__ == "__main__":
 
 ## Deployment
 
-The client has a built-in Python 3.7 interpreter, so the integrations are delivered as `.py` files.
-The additional `manifest.json` file is required:
+The client has a built-in Python 3.7 interpreter, so the integrations are delivered as python modules.
+In order to be found by GOG Galaxy 2.0 an integration folder should be placed in [lookup directory](#deploy-location). Beside all the python files, the integration folder has to contain [manifest.json](#deploy-manifest) and all third-party dependencies. See an [examplary structure](#deploy-structure-example).
+
+### <a name="deploy-location"></a> Lookup directory:
+- Windows:
+
+    `%localappdata%\GOG.com\Galaxy\plugins\installed`
+
+- macOS:
+
+    `~/Library/Application Support/GOG.com/Galaxy/plugins/installed`
+
+### <a name="deploy-manifest"></a> Manifest
+Obligatory JSON file to be placed in a integration folder.
 
 ```json
 {
@@ -71,6 +83,32 @@ The additional `manifest.json` file is required:
     "script": "plugin.py"
 }
 ```
+| property      | description |
+|---------------|---|
+| `guid`        |   |
+| `description` |   |
+| `url`         |   |
+| `script`      | path of the entry point module, relative to the integration folder |
+
+### Dependencies
+All third-party packages (packages not included in Python 3.7 standard library) should be deployed along with plugin files. Use the folowing command structure:
+
+```pip install DEP --target DIR --implementation cp --python-version 37```
+
+For example plugin that uses *requests* has structure as follows:
+
+<a name="deploy-structure-example"></a>
+```bash
+installed
+└── my_integration
+    ├── galaxy
+    │   └── api
+    ├── requests
+    │   └── ...
+    ├── plugin.py
+    └── manifest.json
+```
+
 ## Legal Notice
 
 By integrating or attempting to integrate any applications or content with or into GOG Galaxy 2.0 you represent that such application or content is your original creation (other than any software made available by GOG) and/or that you have all necessary rights to grant such applicable rights to the relevant community integration to GOG and to GOG Galaxy 2.0 end users for the purpose of use of such community integration and that such community integration comply with any third party license and other requirements including compliance with applicable laws.
