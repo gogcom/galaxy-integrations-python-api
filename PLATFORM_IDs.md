@@ -5,14 +5,14 @@ Platform ID list for GOG Galaxy 2.0 Integrations
 | ID | Name |
 | --- | --- |
 | steam	| Steam |
-| psn	| Playstation Network |
+| psn	| PlayStation Network |
 | xboxone	| Xbox Live |
 | generic	| Manually added games |
-| origin	| EA Origin |
+| origin	| Origin |
 | uplay	| Uplay |
 | battlenet	| Battle.net |
 | epic	| Epic Games Store |
-| bethesda	| Bethesda |
+| bethesda	| Bethesda.net |
 | paradox	| Paradox Plaza |
 | humble	| Humble Bundle |
 | kartridge	| Kartridge |
@@ -26,7 +26,7 @@ Platform ID list for GOG Galaxy 2.0 Integrations
 | ngameboy	| Nintendo Game Boy |
 | atari	| Atari |
 | amiga	| Amiga |
-| snes	| Super Nintendo Entertainment System |
+| snes	| SNES |
 | beamdog	| Beamdog |
 | d2d	| Direct2Drive |
 | discord	| Discord |
@@ -35,8 +35,8 @@ Platform ID list for GOG Galaxy 2.0 Integrations
 | gmg	| Green Man Gaming |
 | weplay	| WePlay |
 | zx	| Zx Spectrum PC |
-| vision	| ColecoVision and Vision family consoles  |
-| nes	| Nintendo Entertainment System  |
+| vision	| ColecoVision |
+| nes	| NES |
 | sms	| Sega Master System |
 | c64	| Commodore 64 |
 | pce 	| PC Engine |
@@ -60,21 +60,21 @@ Platform ID list for GOG Galaxy 2.0 Integrations
 | fanatical	| Fanatical store |
 | playasia 	| PlayAsia |
 | stadia	| Google Stadia |
-| arc	| ARC - Perfect World launcher |
-| eso	| Elder Scrolls Online launcher |
-| glyph	| Trion World launcher |
+| arc	| ARC |
+| eso	| ESO |
+| glyph	| Trion World |
 | aionl	| Aion: Legions of War |
-| aion	| Normal mmo Aion launcher |
-| blade	| Blade and Soul mmo launcher |
-| gw	| Guild Wars launcher |
-| gw2	| Guild Wars 2 launcher |
-| lin2	| Lineage 2 launcher |
-| ffxi	| Final Fantasy XI launcher |
-| ffxiv	| Final Fantasy XIV launcher |
-| totalwar	| TotalWar series launcher |
-| winstore	| Windows store |
+| aion	| Aion |
+| blade	| Blade and Soul |
+| gw	| Guild Wars  |
+| gw2	| Guild Wars   |
+| lin2	| Lineage 2 |
+| ffxi	| Final Fantasy XI |
+| ffxiv	| Final Fantasy XIV  |
+| totalwar	| TotalWar |
+| winstore	| Windows Store |
 | elites	| Elite Dangerous |
-| star	| Star Citizen launcher |
+| star	| Star Citizen |
 | psp	| Playstation Portable |
 | psvita	| Playstation Vita |
 | nds	| Nintendo DS |
