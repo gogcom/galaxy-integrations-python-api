@@ -64,7 +64,8 @@ if __name__ == "__main__":
 The client has a built-in Python 3.7 interpreter, so the integrations are delivered as python modules.
 In order to be found by GOG Galaxy 2.0 an integration folder should be placed in [lookup directory](#deploy-location). Beside all the python files, the integration folder has to contain [manifest.json](#deploy-manifest) and all third-party dependencies. See an [examplary structure](#deploy-structure-example).
 
-### <a name="deploy-location"></a> Lookup directory:
+### Lookup directory
+<a name="deploy-location"></a>
 - Windows:
 
     `%localappdata%\GOG.com\Galaxy\plugins\installed`
@@ -73,7 +74,8 @@ In order to be found by GOG Galaxy 2.0 an integration folder should be placed in
 
     `~/Library/Application Support/GOG.com/Galaxy/plugins/installed`
 
-### <a name="deploy-manifest"></a> Manifest
+### Manifest
+<a name="deploy-manifest"></a> 
 Obligatory JSON file to be placed in a integration folder.
 
 ```json
