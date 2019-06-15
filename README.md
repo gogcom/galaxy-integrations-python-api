@@ -22,9 +22,9 @@ The provided features are:
 
 ## Platform Id's
 
-Each integration can implement only one platform.
+Each integration can implement only one platform. Each integration must declare which platform it's integrating.
 
-[Contribution guidelines for this project](PLATFORM_IDs.md)
+[List of possible Platofrm IDs](PLATFORM_IDs.md)
 
 ## Basic usage
 

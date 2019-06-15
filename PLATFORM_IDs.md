@@ -1,5 +1,7 @@
 ### PLATFORM ID LIST
 
+Platform ID list for GOG Galaxy 2.0 Integrations
+
 | ID | Name |
 | --- | --- |
 | steam	| Steam |
