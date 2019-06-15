@@ -66,11 +66,11 @@ Platform ID list for GOG Galaxy 2.0 Integrations
 | aionl	| Aion: Legions of War |
 | aion	| Aion |
 | blade	| Blade and Soul |
-| gw	| Guild Wars  |
-| gw2	| Guild Wars   |
+| gw	| Guild Wars |
+| gw2	| Guild Wars 2 |
 | lin2	| Lineage 2 |
 | ffxi	| Final Fantasy XI |
-| ffxiv	| Final Fantasy XIV  |
+| ffxiv	| Final Fantasy XIV |
 | totalwar	| TotalWar |
 | winstore	| Windows Store |
 | elites	| Elite Dangerous |
