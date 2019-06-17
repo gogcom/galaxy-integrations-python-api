@@ -7,6 +7,7 @@ GOG Galaxy Integrations Python API
 
    Overview <overview>
    API <galaxy.api>
+   Platform ID's <platforms>
 
 Index
 -------------------

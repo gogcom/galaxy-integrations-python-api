@@ -57,7 +57,12 @@ class Plugin:
         # internal
         self._register_method("shutdown", self._shutdown, internal=True)
         self._register_method("get_capabilities", self._get_capabilities, internal=True)
-        self._register_method("initialize_cache", self._initialize_cache, internal=True)
+        self._register_method(
+            "initialize_cache",
+            self._initialize_cache,
+            internal=True,
+            sensitive_params="data"
+        )
         self._register_method("ping", self._ping, internal=True)
 
         # implemented by developer
@@ -466,7 +471,8 @@ class Plugin:
         """
         self._notification_client.notify(
             "push_cache",
-            params={"data": self._persistent_cache}
+            params={"data": self._persistent_cache},
+            sensitive_params="data"
         )
 
     # handlers
