@@ -9,7 +9,7 @@
    
 .. excluding Platforms Id's link
 
-:ref:`platforms-link`.
+:ref:`platforms-link`
 
 .. mdinclude:: ../../README.md
    :start-line: 28
