@@ -79,4 +79,5 @@ Platform ID list for GOG Galaxy 2.0 Integrations
 | psvita	| Playstation Vita |
 | nds	| Nintendo DS |
 | 3ds	| Nintendo 3DS |
+| nexus | Nexusmods |
 
