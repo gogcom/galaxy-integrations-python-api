@@ -20,7 +20,7 @@ Platform ID list for GOG Galaxy 2.0 Integrations
 | nswitch	| Nintendo Switch |
 | nwiiu	| Nintendo Wii U |
 | nwii	| Nintendo Wii |
-| ncube	| Nintendo Game Cube |
+| ncube	| Nintendo GameCube |
 | riot	| Riot |
 | wargaming	| Wargaming |
 | ngameboy	| Nintendo Game Boy |
@@ -58,25 +58,24 @@ Platform ID list for GOG Galaxy 2.0 Integrations
 | bb	| BestBuy |
 | gameuk	| Game UK |
 | fanatical	| Fanatical store |
-| playasia 	| PlayAsia |
+| playasia 	| Play-Asia |
 | stadia	| Google Stadia |
 | arc	| ARC |
 | eso	| ESO |
 | glyph	| Trion World |
 | aionl	| Aion: Legions of War |
 | aion	| Aion |
-| blade	| Blade and Soul |
+| blade	| Blade & Soul |
 | gw	| Guild Wars |
 | gw2	| Guild Wars 2 |
 | lin2	| Lineage 2 |
 | ffxi	| Final Fantasy XI |
-| ffxiv	| Final Fantasy XIV |
-| totalwar	| TotalWar |
+| ffxiv	| Final Fantasy XIV  |
+| totalwar	| Total War |
 | winstore	| Windows Store |
 | elites	| Elite Dangerous |
 | star	| Star Citizen |
-| psp	| Playstation Portable |
-| psvita	| Playstation Vita |
+| psp	| PlayStation Portable |
+| psvita	| PlayStation Vita |
 | nds	| Nintendo DS |
 | 3ds	| Nintendo 3DS |
-
