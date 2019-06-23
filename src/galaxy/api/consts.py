@@ -13,6 +13,7 @@ class Platform(Enum):
     Uplay = "uplay"
     Battlenet = "battlenet"
     Epic = "epic"
+    Wargaming = "wargaming"
 
 
 class Feature(Enum):
