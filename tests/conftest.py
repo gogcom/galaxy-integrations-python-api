@@ -11,7 +11,7 @@ from galaxy.unittest.mock import AsyncMock, coroutine_mock
 @pytest.fixture()
 def reader():
     stream = MagicMock(name="stream_reader")
-    stream.readline = AsyncMock()
+    stream.read = AsyncMock()
     yield stream
 
 @pytest.fixture()
@@ -22,8 +22,8 @@ def writer():
     yield stream
 
 @pytest.fixture()
-def readline(reader):
-    yield reader.readline
+def read(reader):
+    yield reader.read
 
 @pytest.fixture()
 def write(writer):

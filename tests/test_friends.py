@@ -5,14 +5,14 @@ from galaxy.api.types import FriendInfo
 from galaxy.api.errors import UnknownError
 
 
-def test_get_friends_success(plugin, readline, write):
+def test_get_friends_success(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
         "method": "import_friends"
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.get_friends.coro.return_value = [
         FriendInfo("3", "Jan"),
         FriendInfo("5", "Ola")
@@ -33,14 +33,14 @@ def test_get_friends_success(plugin, readline, write):
     }
 
 
-def test_get_friends_failure(plugin, readline, write):
+def test_get_friends_failure(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
         "method": "import_friends"
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.get_friends.coro.side_effect = UnknownError()
     asyncio.run(plugin.run())
     plugin.get_friends.assert_called_with()

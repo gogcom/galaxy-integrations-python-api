@@ -6,7 +6,7 @@ from galaxy.api.errors import UnknownError
 from galaxy.api.consts import PresenceState
 
 
-def test_get_users_success(plugin, readline, write):
+def test_get_users_success(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "8",
@@ -16,7 +16,7 @@ def test_get_users_success(plugin, readline, write):
         }
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.get_users.coro.return_value = [
         UserInfo("5", False, "Ula", "http://avatar.png", Presence(PresenceState.Offline))
     ]
@@ -43,7 +43,7 @@ def test_get_users_success(plugin, readline, write):
     }
 
 
-def test_get_users_failure(plugin, readline, write):
+def test_get_users_failure(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "12",
@@ -53,7 +53,7 @@ def test_get_users_failure(plugin, readline, write):
         }
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.get_users.coro.side_effect = UnknownError()
     asyncio.run(plugin.run())
     plugin.get_users.assert_called_with(user_id_list=["10", "11", "12"])

@@ -4,7 +4,7 @@ import json
 from galaxy.api.plugin import Plugin
 from galaxy.api.consts import Platform
 
-def test_get_capabilites(reader, writer, readline, write):
+def test_get_capabilites(reader, writer, read, write):
     class PluginImpl(Plugin): #pylint: disable=abstract-method
         async def get_owned_games(self):
             pass
@@ -16,7 +16,7 @@ def test_get_capabilites(reader, writer, readline, write):
     }
     token = "token"
     plugin = PluginImpl(Platform.Generic, "0.1", reader, writer, token)
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     asyncio.run(plugin.run())
     response = json.loads(write.call_args[0][0])
     assert response == {
@@ -31,13 +31,13 @@ def test_get_capabilites(reader, writer, readline, write):
         }
     }
 
-def test_shutdown(plugin, readline, write):
+def test_shutdown(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "5",
         "method": "shutdown"
     }
-    readline.side_effect = [json.dumps(request)]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     asyncio.run(plugin.run())
     plugin.shutdown.assert_called_with()
     response = json.loads(write.call_args[0][0])
@@ -47,13 +47,13 @@ def test_shutdown(plugin, readline, write):
         "result": None
     }
 
-def test_ping(plugin, readline, write):
+def test_ping(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "7",
         "method": "ping"
     }
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     asyncio.run(plugin.run())
     response = json.loads(write.call_args[0][0])
     assert response == {
@@ -62,7 +62,7 @@ def test_ping(plugin, readline, write):
         "result": None
     }
 
-def test_tick(plugin, readline):
-    readline.side_effect = [""]
+def test_tick(plugin, read):
+    read.side_effect = [b""]
     asyncio.run(plugin.run())
     plugin.tick.assert_called_with()

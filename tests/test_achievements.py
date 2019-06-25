@@ -16,7 +16,7 @@ def test_initialization_no_id_nor_name():
     with raises(AssertionError):
         Achievement(unlock_time=1234567890)
 
-def test_success(plugin, readline, write):
+def test_success(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
@@ -25,7 +25,7 @@ def test_success(plugin, readline, write):
             "game_id": "14"
         }
     }
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.get_unlocked_achievements.coro.return_value = [
         Achievement(achievement_id="lvl10", unlock_time=1548421241),
         Achievement(achievement_name="Got level 20", unlock_time=1548422395),
@@ -57,7 +57,7 @@ def test_success(plugin, readline, write):
         }
     }
 
-def test_failure(plugin, readline, write):
+def test_failure(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
@@ -67,7 +67,7 @@ def test_failure(plugin, readline, write):
         }
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.get_unlocked_achievements.coro.side_effect = UnknownError()
     asyncio.run(plugin.run())
     plugin.get_unlocked_achievements.assert_called()

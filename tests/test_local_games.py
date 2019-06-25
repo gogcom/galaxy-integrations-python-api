@@ -7,14 +7,14 @@ from galaxy.api.types import LocalGame
 from galaxy.api.consts import LocalGameState
 from galaxy.api.errors import UnknownError, FailedParsingManifest
 
-def test_success(plugin, readline, write):
+def test_success(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
         "method": "import_local_games"
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
 
     plugin.get_local_games.coro.return_value = [
         LocalGame("1", LocalGameState.Running),
@@ -53,14 +53,14 @@ def test_success(plugin, readline, write):
         pytest.param(FailedParsingManifest, 200, "Failed parsing manifest", id="failed_parsing")
     ],
 )
-def test_failure(plugin, readline, write, error, code, message):
+def test_failure(plugin, read, write, error, code, message):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
         "method": "import_local_games"
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.get_local_games.coro.side_effect = error()
     asyncio.run(plugin.run())
     plugin.get_local_games.assert_called_with()
