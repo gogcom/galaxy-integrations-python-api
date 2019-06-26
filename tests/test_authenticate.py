@@ -9,14 +9,14 @@ from galaxy.api.errors import (
     BackendNotAvailable, BackendTimeout, BackendError, TemporaryBlocked, Banned, AccessDenied
 )
 
-def test_success(plugin, readline, write):
+def test_success(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
         "method": "init_authentication"
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.authenticate.coro.return_value = Authentication("132", "Zenek")
     asyncio.run(plugin.run())
     plugin.authenticate.assert_called_with()
@@ -44,14 +44,14 @@ def test_success(plugin, readline, write):
     pytest.param(Banned, 105, "Banned", id="banned"),
     pytest.param(AccessDenied, 106, "Access denied", id="access_denied"),
 ])
-def test_failure(plugin, readline, write, error, code, message):
+def test_failure(plugin, read, write, error, code, message):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
         "method": "init_authentication"
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.authenticate.coro.side_effect = error()
     asyncio.run(plugin.run())
     plugin.authenticate.assert_called_with()
@@ -66,7 +66,7 @@ def test_failure(plugin, readline, write, error, code, message):
         }
     }
 
-def test_stored_credentials(plugin, readline, write):
+def test_stored_credentials(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
@@ -77,7 +77,7 @@ def test_stored_credentials(plugin, readline, write):
             }
         }
     }
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.authenticate.coro.return_value = Authentication("132", "Zenek")
     asyncio.run(plugin.run())
     plugin.authenticate.assert_called_with(stored_credentials={"token": "ABC"})
@@ -100,7 +100,7 @@ def test_store_credentials(plugin, write):
         "params": credentials
     }
 
-def test_lost_authentication(plugin, readline, write):
+def test_lost_authentication(plugin, write):
 
     async def couritine():
         plugin.lost_authentication()

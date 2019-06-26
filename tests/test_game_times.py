@@ -6,14 +6,14 @@ import pytest
 from galaxy.api.types import GameTime
 from galaxy.api.errors import UnknownError, ImportInProgress, BackendError
 
-def test_success(plugin, readline, write):
+def test_success(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
         "method": "import_game_times"
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.get_game_times.coro.return_value = [
         GameTime("3", 60, 1549550504),
         GameTime("5", 10, 1549550502)
@@ -41,14 +41,14 @@ def test_success(plugin, readline, write):
         }
     }
 
-def test_failure(plugin, readline, write):
+def test_failure(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
         "method": "import_game_times"
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.get_game_times.coro.side_effect = UnknownError()
     asyncio.run(plugin.run())
     plugin.get_game_times.assert_called_with()

@@ -73,6 +73,8 @@ class Server():
         self._methods = {}
         self._notifications = {}
         self._eof_listeners = []
+        self._input_buffer = bytes()
+        self._input_buffer_it = 0
 
     def register_method(self, name, callback, internal, sensitive_params=False):
         """
@@ -104,7 +106,7 @@ class Server():
     async def run(self):
         while self._active:
             try:
-                data = await self._reader.readline()
+                data = await self._readline()
                 if not data:
                     self._eof()
                     continue
@@ -114,6 +116,23 @@ class Server():
             data = data.strip()
             logging.debug("Received %d bytes of data", len(data))
             self._handle_input(data)
+
+    async def _readline(self):
+        """Like StreamReader.readline but without limit"""
+        while True:
+            chunk = await self._reader.read(1024)
+            self._input_buffer += chunk
+            it = self._input_buffer.find(b"\n", self._input_buffer_it)
+            if it < 0:
+                if not chunk:
+                    return bytes() # EOF
+                else:
+                    self._input_buffer_it = len(self._input_buffer)
+                    continue
+            line = self._input_buffer[:it]
+            self._input_buffer = self._input_buffer[it+1:]
+            self._input_buffer_it = 0
+            return line
 
     def stop(self):
         self._active = False

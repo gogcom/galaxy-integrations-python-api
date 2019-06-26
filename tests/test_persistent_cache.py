@@ -28,7 +28,7 @@ def cache_data():
     }
 
 
-def test_initialize_cache(plugin, readline, write, cache_data):
+def test_initialize_cache(plugin, read, write, cache_data):
     request_id = 3
     request = {
         "jsonrpc": "2.0",
@@ -36,7 +36,7 @@ def test_initialize_cache(plugin, readline, write, cache_data):
         "method": "initialize_cache",
         "params": {"data": cache_data}
     }
-    readline.side_effect = [json.dumps(request)]
+    read.side_effect = [json.dumps(request).encode() + b"\n"]
 
     assert {} == plugin.persistent_cache
     asyncio.run(plugin.run())

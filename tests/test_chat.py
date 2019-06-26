@@ -9,7 +9,7 @@ from galaxy.api.errors import (
     TooManyMessagesSent, IncoherentLastMessage, MessageNotFound
 )
 
-def test_send_message_success(plugin, readline, write):
+def test_send_message_success(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
@@ -20,7 +20,7 @@ def test_send_message_success(plugin, readline, write):
         }
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.send_message.coro.return_value = None
     asyncio.run(plugin.run())
     plugin.send_message.assert_called_with(room_id="14", message="Hello!")
@@ -40,7 +40,7 @@ def test_send_message_success(plugin, readline, write):
     pytest.param(BackendError, 4, "Backend error", id="backend_error"),
     pytest.param(TooManyMessagesSent, 300, "Too many messages sent", id="too_many_messages")
 ])
-def test_send_message_failure(plugin, readline, write, error, code, message):
+def test_send_message_failure(plugin, read, write, error, code, message):
     request = {
         "jsonrpc": "2.0",
         "id": "6",
@@ -51,7 +51,7 @@ def test_send_message_failure(plugin, readline, write, error, code, message):
         }
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.send_message.coro.side_effect = error()
     asyncio.run(plugin.run())
     plugin.send_message.assert_called_with(room_id="15", message="Bye")
@@ -66,7 +66,7 @@ def test_send_message_failure(plugin, readline, write, error, code, message):
         }
     }
 
-def test_mark_as_read_success(plugin, readline, write):
+def test_mark_as_read_success(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "7",
@@ -77,7 +77,7 @@ def test_mark_as_read_success(plugin, readline, write):
         }
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.mark_as_read.coro.return_value = None
     asyncio.run(plugin.run())
     plugin.mark_as_read.assert_called_with(room_id="14", last_message_id="67")
@@ -102,7 +102,7 @@ def test_mark_as_read_success(plugin, readline, write):
         id="incoherent_last_message"
     )
 ])
-def test_mark_as_read_failure(plugin, readline, write, error, code, message):
+def test_mark_as_read_failure(plugin, read, write, error, code, message):
     request = {
         "jsonrpc": "2.0",
         "id": "4",
@@ -113,7 +113,7 @@ def test_mark_as_read_failure(plugin, readline, write, error, code, message):
         }
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.mark_as_read.coro.side_effect = error()
     asyncio.run(plugin.run())
     plugin.mark_as_read.assert_called_with(room_id="18", last_message_id="7")
@@ -128,14 +128,14 @@ def test_mark_as_read_failure(plugin, readline, write, error, code, message):
         }
     }
 
-def test_get_rooms_success(plugin, readline, write):
+def test_get_rooms_success(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "2",
         "method": "import_rooms"
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.get_rooms.coro.return_value = [
         Room("13", 0, None),
         Room("15", 34, "8")
@@ -162,14 +162,14 @@ def test_get_rooms_success(plugin, readline, write):
         }
     }
 
-def test_get_rooms_failure(plugin, readline, write):
+def test_get_rooms_failure(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "9",
         "method": "import_rooms"
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.get_rooms.coro.side_effect = UnknownError()
     asyncio.run(plugin.run())
     plugin.get_rooms.assert_called_with()
@@ -184,7 +184,7 @@ def test_get_rooms_failure(plugin, readline, write):
         }
     }
 
-def test_get_room_history_from_message_success(plugin, readline, write):
+def test_get_room_history_from_message_success(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "2",
@@ -195,7 +195,7 @@ def test_get_room_history_from_message_success(plugin, readline, write):
         }
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.get_room_history_from_message.coro.return_value = [
         Message("13", "149", 1549454837, "Hello"),
         Message("14", "812", 1549454899, "Hi")
@@ -233,7 +233,7 @@ def test_get_room_history_from_message_success(plugin, readline, write):
     pytest.param(BackendError, 4, "Backend error", id="backend_error"),
     pytest.param(MessageNotFound, 500, "Message not found", id="message_not_found")
 ])
-def test_get_room_history_from_message_failure(plugin, readline, write, error, code, message):
+def test_get_room_history_from_message_failure(plugin, read, write, error, code, message):
     request = {
         "jsonrpc": "2.0",
         "id": "7",
@@ -244,7 +244,7 @@ def test_get_room_history_from_message_failure(plugin, readline, write, error, c
         }
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.get_room_history_from_message.coro.side_effect = error()
     asyncio.run(plugin.run())
     plugin.get_room_history_from_message.assert_called_with(room_id="33", message_id="88")
@@ -259,7 +259,7 @@ def test_get_room_history_from_message_failure(plugin, readline, write, error, c
         }
     }
 
-def test_get_room_history_from_timestamp_success(plugin, readline, write):
+def test_get_room_history_from_timestamp_success(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "7",
@@ -270,7 +270,7 @@ def test_get_room_history_from_timestamp_success(plugin, readline, write):
         }
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.get_room_history_from_timestamp.coro.return_value = [
         Message("12", "155", 1549454836, "Bye")
     ]
@@ -296,7 +296,7 @@ def test_get_room_history_from_timestamp_success(plugin, readline, write):
         }
     }
 
-def test_get_room_history_from_timestamp_failure(plugin, readline, write):
+def test_get_room_history_from_timestamp_failure(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
@@ -307,7 +307,7 @@ def test_get_room_history_from_timestamp_failure(plugin, readline, write):
         }
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.get_room_history_from_timestamp.coro.side_effect = UnknownError()
     asyncio.run(plugin.run())
     plugin.get_room_history_from_timestamp.assert_called_with(
