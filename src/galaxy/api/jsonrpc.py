@@ -74,6 +74,7 @@ class Server():
         self._notifications = {}
         self._eof_listeners = []
         self._input_buffer = bytes()
+        self._input_buffer_it = 0
 
     def register_method(self, name, callback, internal, sensitive_params=False):
         """
@@ -120,15 +121,17 @@ class Server():
         """Like StreamReader.readline but without limit"""
         while True:
             chunk = await self._reader.read(1024)
-            if not chunk:
-                return chunk
-            previous_size = len(self._input_buffer)
             self._input_buffer += chunk
-            it = self._input_buffer.find(b"\n", previous_size)
+            it = self._input_buffer.find(b"\n", self._input_buffer_it)
             if it < 0:
-                continue
+                if not chunk:
+                    return bytes() # EOF
+                else:
+                    self._input_buffer_it = len(self._input_buffer)
+                    continue
             line = self._input_buffer[:it]
             self._input_buffer = self._input_buffer[it+1:]
+            self._input_buffer_it = 0
             return line
 
     def stop(self):
