@@ -204,5 +204,5 @@ class GameTime():
     :param last_time_played: last time the game was played (**unix timestamp**)
     """
     game_id: str
-    time_played: int
-    last_played_time: int
+    time_played: Optional[int]
+    last_played_time: Optional[int]

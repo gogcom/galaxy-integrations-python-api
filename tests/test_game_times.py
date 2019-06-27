@@ -16,7 +16,8 @@ def test_success(plugin, read, write):
     read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.get_game_times.coro.return_value = [
         GameTime("3", 60, 1549550504),
-        GameTime("5", 10, 1549550502)
+        GameTime("5", 10, None),
+        GameTime("7", None, 1549550502),
     ]
     asyncio.run(plugin.run())
     plugin.get_game_times.assert_called_with()
@@ -35,7 +36,10 @@ def test_success(plugin, read, write):
                 {
                     "game_id": "5",
                     "time_played": 10,
-                    "last_played_time": 1549550502
+                },
+                {
+                    "game_id": "7",
+                     "last_played_time": 1549550502
                 }
             ]
         }
