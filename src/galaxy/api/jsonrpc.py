@@ -116,6 +116,7 @@ class Server():
             data = data.strip()
             logging.debug("Received %d bytes of data", len(data))
             self._handle_input(data)
+            await asyncio.sleep(0) # To not starve task queue
 
     def stop(self):
         self._active = False

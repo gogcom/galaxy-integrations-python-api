@@ -62,7 +62,18 @@ def test_ping(plugin, read, write):
         "result": None
     }
 
-def test_tick(plugin, read):
+def test_tick_before_handshake(plugin, read):
     read.side_effect = [b""]
+    asyncio.run(plugin.run())
+    plugin.tick.assert_not_called()
+
+def test_tick_after_handshake(plugin, read):
+    request = {
+        "jsonrpc": "2.0",
+        "id": "6",
+        "method": "initialize_cache",
+        "params": {"data": {}}
+    }
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     asyncio.run(plugin.run())
     plugin.tick.assert_called_with()

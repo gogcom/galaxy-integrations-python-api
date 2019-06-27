@@ -38,6 +38,7 @@ class Plugin:
 
         self._feature_methods = OrderedDict()
         self._active = True
+        self._pass_control_task = None
 
         self._reader, self._writer = reader, writer
         self._handshake_token = handshake_token
@@ -210,15 +211,17 @@ class Plugin:
 
     async def run(self):
         """Plugin's main coroutine."""
-        async def pass_control():
-            while self._active:
-                try:
-                    self.tick()
-                except Exception:
-                    logging.exception("Unexpected exception raised in plugin tick")
-                await asyncio.sleep(1)
+        await self._server.run()
+        if self._pass_control_task is not None:
+            await self._pass_control_task
 
-        await asyncio.gather(pass_control(), self._server.run())
+    async def _pass_control(self):
+        while self._active:
+            try:
+                self.tick()
+            except Exception:
+                logging.exception("Unexpected exception raised in plugin tick")
+            await asyncio.sleep(1)
 
     def _shutdown(self):
         logging.info("Shutting down")
@@ -236,6 +239,7 @@ class Plugin:
     def _initialize_cache(self, data: Dict):
         self._persistent_cache = data
         self.handshake_complete()
+        self._pass_control_task = asyncio.create_task(self._pass_control())
 
     @staticmethod
     def _ping():
