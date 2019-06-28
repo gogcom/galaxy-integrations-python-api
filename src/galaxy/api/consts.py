@@ -80,6 +80,7 @@ class Platform(Enum):
     PlayStationVita = "psvita"
     NintendoDs = "nds"
     Nintendo3Ds = "3ds"
+    PathOfExile = "pathofexile"
 
 class Feature(Enum):
     """Possible features that can be implemented by an integration.
