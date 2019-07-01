@@ -268,6 +268,7 @@ class Plugin:
                 return Authentication(user_data['userId'], user_data['username'])
 
          """
+        self.persistent_cache['credentials'] = credentials
         self._notification_client.notify("store_credentials", credentials, sensitive_params=True)
 
     def add_game(self, game: Game) -> None:
