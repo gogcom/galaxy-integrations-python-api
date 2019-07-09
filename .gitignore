@@ -1,2 +1,9 @@
 # pytest
 __pycache__/
+.vscode/
+.venv/
+src/galaxy.plugin.api.egg-info/
+docs/build/
+Pipfile
+.idea
+docs/source/_build

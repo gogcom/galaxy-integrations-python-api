@@ -1,7 +1,7 @@
 import asyncio
 import json
 
-def test_success(plugin, readline):
+def test_success(plugin, read):
     request = {
         "jsonrpc": "2.0",
         "method": "launch_game",
@@ -10,7 +10,7 @@ def test_success(plugin, readline):
         }
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.get_owned_games.return_value = None
     asyncio.run(plugin.run())
     plugin.launch_game.assert_called_with(game_id="3")

@@ -5,6 +5,8 @@ import logging
 import inspect
 import json
 
+from galaxy.reader import StreamLineReader
+
 class JsonRpcError(Exception):
     def __init__(self, code, message, data=None):
         self.code = code
@@ -67,7 +69,7 @@ def anonymise_sensitive_params(params, sensitive_params):
 class Server():
     def __init__(self, reader, writer, encoder=json.JSONEncoder()):
         self._active = True
-        self._reader = reader
+        self._reader = StreamLineReader(reader)
         self._writer = writer
         self._encoder = encoder
         self._methods = {}
@@ -114,6 +116,7 @@ class Server():
             data = data.strip()
             logging.debug("Received %d bytes of data", len(data))
             self._handle_input(data)
+            await asyncio.sleep(0) # To not starve task queue
 
     def stop(self):
         self._active = False

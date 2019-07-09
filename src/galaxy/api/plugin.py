@@ -7,13 +7,14 @@ from enum import Enum
 from collections import OrderedDict
 import sys
 
-from typing import List, Dict
+from typing import Any, List, Dict, Optional, Union
 
 from galaxy.api.types import Achievement, Game, LocalGame, FriendInfo, GameTime, UserInfo, Room
 
 from galaxy.api.jsonrpc import Server, NotificationClient, ApplicationError
 from galaxy.api.consts import Feature
 from galaxy.api.errors import UnknownError, ImportInProgress
+from galaxy.api.types import Authentication, NextStep, Message
 
 
 class JSONEncoder(json.JSONEncoder):
@@ -37,6 +38,7 @@ class Plugin:
 
         self._feature_methods = OrderedDict()
         self._active = True
+        self._pass_control_task = None
 
         self._reader, self._writer = reader, writer
         self._handshake_token = handshake_token
@@ -209,15 +211,17 @@ class Plugin:
 
     async def run(self):
         """Plugin's main coroutine."""
-        async def pass_control():
-            while self._active:
-                try:
-                    self.tick()
-                except Exception:
-                    logging.exception("Unexpected exception raised in plugin tick")
-                await asyncio.sleep(1)
+        await self._server.run()
+        if self._pass_control_task is not None:
+            await self._pass_control_task
 
-        await asyncio.gather(pass_control(), self._server.run())
+    async def _pass_control(self):
+        while self._active:
+            try:
+                self.tick()
+            except Exception:
+                logging.exception("Unexpected exception raised in plugin tick")
+            await asyncio.sleep(1)
 
     def _shutdown(self):
         logging.info("Shutting down")
@@ -235,13 +239,14 @@ class Plugin:
     def _initialize_cache(self, data: Dict):
         self._persistent_cache = data
         self.handshake_complete()
+        self._pass_control_task = asyncio.create_task(self._pass_control())
 
     @staticmethod
     def _ping():
         pass
 
     # notifications
-    def store_credentials(self, credentials: dict):
+    def store_credentials(self, credentials: Dict[str, Any]) -> None:
         """Notify the client to store authentication credentials.
         Credentials are passed on the next authenticate call.
 
@@ -263,9 +268,10 @@ class Plugin:
                 return Authentication(user_data['userId'], user_data['username'])
 
          """
+        self.persistent_cache['credentials'] = credentials
         self._notification_client.notify("store_credentials", credentials, sensitive_params=True)
 
-    def add_game(self, game: Game):
+    def add_game(self, game: Game) -> None:
         """Notify the client to add game to the list of owned games
         of the currently authenticated user.
 
@@ -287,7 +293,7 @@ class Plugin:
         params = {"owned_game": game}
         self._notification_client.notify("owned_game_added", params)
 
-    def remove_game(self, game_id: str):
+    def remove_game(self, game_id: str) -> None:
         """Notify the client to remove game from the list of owned games
         of the currently authenticated user.
 
@@ -309,7 +315,7 @@ class Plugin:
         params = {"game_id": game_id}
         self._notification_client.notify("owned_game_removed", params)
 
-    def update_game(self, game: Game):
+    def update_game(self, game: Game) -> None:
         """Notify the client to update the status of a game
         owned by the currently authenticated user.
 
@@ -318,7 +324,7 @@ class Plugin:
         params = {"owned_game": game}
         self._notification_client.notify("owned_game_updated", params)
 
-    def unlock_achievement(self, game_id: str, achievement: Achievement):
+    def unlock_achievement(self, game_id: str, achievement: Achievement) -> None:
         """Notify the client to unlock an achievement for a specific game.
 
         :param game_id: game_id of the game for which to unlock an achievement.
@@ -330,7 +336,7 @@ class Plugin:
         }
         self._notification_client.notify("achievement_unlocked", params)
 
-    def game_achievements_import_success(self, game_id: str, achievements):
+    def game_achievements_import_success(self, game_id: str, achievements: List[Achievement]) -> None:
         """Notify the client that import of achievements for a given game has succeeded.
         This method is called by import_games_achievements.
 
@@ -343,7 +349,7 @@ class Plugin:
         }
         self._notification_client.notify("game_achievements_import_success", params)
 
-    def game_achievements_import_failure(self, game_id: str, error: ApplicationError):
+    def game_achievements_import_failure(self, game_id: str, error: ApplicationError) -> None:
         """Notify the client that import of achievements for a given game has failed.
         This method is called by import_games_achievements.
 
@@ -359,12 +365,12 @@ class Plugin:
         }
         self._notification_client.notify("game_achievements_import_failure", params)
 
-    def achievements_import_finished(self):
+    def achievements_import_finished(self) -> None:
         """Notify the client that importing achievements has finished.
         This method is called by import_games_achievements_task"""
         self._notification_client.notify("achievements_import_finished", None)
 
-    def update_local_game_status(self, local_game: LocalGame):
+    def update_local_game_status(self, local_game: LocalGame) -> None:
         """Notify the client to update the status of a local game.
 
         :param local_game: the LocalGame to update
@@ -390,7 +396,7 @@ class Plugin:
         params = {"local_game": local_game}
         self._notification_client.notify("local_game_status_changed", params)
 
-    def add_friend(self, user: FriendInfo):
+    def add_friend(self, user: FriendInfo) -> None:
         """Notify the client to add a user to friends list of the currently authenticated user.
 
         :param user: FriendInfo of a user that the client will add to friends list
@@ -398,7 +404,7 @@ class Plugin:
         params = {"friend_info": user}
         self._notification_client.notify("friend_added", params)
 
-    def remove_friend(self, user_id: str):
+    def remove_friend(self, user_id: str) -> None:
         """Notify the client to remove a user from friends list of the currently authenticated user.
 
         :param user_id: id of the user to remove from friends list
@@ -406,7 +412,12 @@ class Plugin:
         params = {"user_id": user_id}
         self._notification_client.notify("friend_removed", params)
 
-    def update_room(self, room_id: str, unread_message_count=None, new_messages=None):
+    def update_room(
+        self,
+        room_id: str,
+        unread_message_count: Optional[int]=None,
+        new_messages: Optional[List[Message]]=None
+    ) -> None:
         """WIP, Notify the client to update the information regarding
         a chat room that the currently authenticated user is in.
 
@@ -421,7 +432,7 @@ class Plugin:
             params["messages"] = new_messages
         self._notification_client.notify("chat_room_updated", params)
 
-    def update_game_time(self, game_time: GameTime):
+    def update_game_time(self, game_time: GameTime) -> None:
         """Notify the client to update game time for a game.
 
         :param game_time: game time to update
@@ -429,7 +440,7 @@ class Plugin:
         params = {"game_time": game_time}
         self._notification_client.notify("game_time_updated", params)
 
-    def game_time_import_success(self, game_time: GameTime):
+    def game_time_import_success(self, game_time: GameTime) -> None:
         """Notify the client that import of a given game_time has succeeded.
         This method is called by import_game_times.
 
@@ -438,7 +449,7 @@ class Plugin:
         params = {"game_time": game_time}
         self._notification_client.notify("game_time_import_success", params)
 
-    def game_time_import_failure(self, game_id: str, error: ApplicationError):
+    def game_time_import_failure(self, game_id: str, error: ApplicationError) -> None:
         """Notify the client that import of a game time for a given game has failed.
         This method is called by import_game_times.
 
@@ -454,19 +465,19 @@ class Plugin:
         }
         self._notification_client.notify("game_time_import_failure", params)
 
-    def game_times_import_finished(self):
+    def game_times_import_finished(self) -> None:
         """Notify the client that importing game times has finished.
         This method is called by :meth:`~.import_game_times_task`.
         """
         self._notification_client.notify("game_times_import_finished", None)
 
-    def lost_authentication(self):
+    def lost_authentication(self) -> None:
         """Notify the client that integration has lost authentication for the
          current user and is unable to perform actions which would require it.
          """
         self._notification_client.notify("authentication_lost", None)
 
-    def push_cache(self):
+    def push_cache(self) -> None:
         """Push local copy of the persistent cache to the GOG Galaxy Client replacing existing one.
         """
         self._notification_client.notify(
@@ -476,14 +487,14 @@ class Plugin:
         )
 
     # handlers
-    def handshake_complete(self):
+    def handshake_complete(self) -> None:
         """This method is called right after the handshake with the GOG Galaxy Client is complete and
         before any other operations are called by the GOG Galaxy Client.
         Persistent cache is available when this method is called.
         Override it if you need to do additional plugin initializations.
         This method is called internally."""
 
-    def tick(self):
+    def tick(self) -> None:
         """This method is called periodically.
         Override it to implement periodical non-blocking tasks.
         This method is called internally.
@@ -503,13 +514,13 @@ class Plugin:
 
         """
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """This method is called on integration shutdown.
         Override it to implement tear down.
         This method is called by the GOG Galaxy Client."""
 
     # methods
-    async def authenticate(self, stored_credentials: dict = None):
+    async def authenticate(self, stored_credentials: Optional[Dict] = None) -> Union[NextStep, Authentication]:
         """Override this method to handle user authentication.
         This method should either return :class:`~galaxy.api.types.Authentication` if the authentication is finished
         or :class:`~galaxy.api.types.NextStep` if it requires going to another url.
@@ -537,7 +548,8 @@ class Plugin:
         """
         raise NotImplementedError()
 
-    async def pass_login_credentials(self, step: str, credentials: Dict[str, str], cookies: List[Dict[str, str]]):
+    async def pass_login_credentials(self, step: str, credentials: Dict[str, str], cookies: List[Dict[str, str]]) \
+            -> Union[NextStep, Authentication]:
         """This method is called if we return galaxy.api.types.NextStep from authenticate or from pass_login_credentials.
         This method's parameters provide the data extracted from the web page navigation that previous NextStep finished on.
         This method should either return galaxy.api.types.Authentication if the authentication is finished
@@ -592,7 +604,7 @@ class Plugin:
         """
         raise NotImplementedError()
 
-    async def start_achievements_import(self, game_ids: List[str]):
+    async def start_achievements_import(self, game_ids: List[str]) -> None:
         """Starts the task of importing achievements.
         This method is called by the GOG Galaxy Client.
 
@@ -611,7 +623,7 @@ class Plugin:
         asyncio.create_task(import_games_achievements_task(game_ids))
         self._achievements_import_in_progress = True
 
-    async def import_games_achievements(self, game_ids: List[str]):
+    async def import_games_achievements(self, game_ids: List[str]) -> None:
         """
         Override this method to return the unlocked achievements
         of the user that is currently logged in to the plugin.
@@ -652,7 +664,7 @@ class Plugin:
         """
         raise NotImplementedError()
 
-    async def launch_game(self, game_id: str):
+    async def launch_game(self, game_id: str) -> None:
         """Override this method to launch the game
         identified by the provided game_id.
         This method is called by the GOG Galaxy Client.
@@ -670,7 +682,7 @@ class Plugin:
         """
         raise NotImplementedError()
 
-    async def install_game(self, game_id: str):
+    async def install_game(self, game_id: str) -> None:
         """Override this method to install the game
         identified by the provided game_id.
         This method is called by the GOG Galaxy Client.
@@ -688,7 +700,7 @@ class Plugin:
         """
         raise NotImplementedError()
 
-    async def uninstall_game(self, game_id: str):
+    async def uninstall_game(self, game_id: str) -> None:
         """Override this method to uninstall the game
         identified by the provided game_id.
         This method is called by the GOG Galaxy Client.
@@ -734,7 +746,7 @@ class Plugin:
         """
         raise NotImplementedError()
 
-    async def send_message(self, room_id: str, message_text: str):
+    async def send_message(self, room_id: str, message_text: str) -> None:
         """WIP, Override this method to send message to a chat room.
          This method is called by the GOG Galaxy Client.
 
@@ -743,7 +755,7 @@ class Plugin:
          """
         raise NotImplementedError()
 
-    async def mark_as_read(self, room_id: str, last_message_id: str):
+    async def mark_as_read(self, room_id: str, last_message_id: str) -> None:
         """WIP, Override this method to mark messages in a chat room as read up to the id provided in the parameter.
         This method is called by the GOG Galaxy Client.
 
@@ -759,7 +771,7 @@ class Plugin:
         """
         raise NotImplementedError()
 
-    async def get_room_history_from_message(self, room_id: str, message_id: str):
+    async def get_room_history_from_message(self, room_id: str, message_id: str) -> List[Message]:
         """WIP, Override this method to return the chat room history since the message provided in parameter.
         This method is called by the GOG Galaxy Client.
 
@@ -768,7 +780,7 @@ class Plugin:
         """
         raise NotImplementedError()
 
-    async def get_room_history_from_timestamp(self, room_id: str, from_timestamp: int):
+    async def get_room_history_from_timestamp(self, room_id: str, from_timestamp: int) -> List[Message]:
         """WIP, Override this method to return the chat room history since the timestamp provided in parameter.
         This method is called by the GOG Galaxy Client.
 
@@ -784,7 +796,7 @@ class Plugin:
         """
         raise NotImplementedError()
 
-    async def start_game_times_import(self, game_ids: List[str]):
+    async def start_game_times_import(self, game_ids: List[str]) -> None:
         """Starts the task of importing game times
         This method is called by the GOG Galaxy Client.
 
@@ -803,7 +815,7 @@ class Plugin:
         asyncio.create_task(import_game_times_task(game_ids))
         self._game_times_import_in_progress = True
 
-    async def import_game_times(self, game_ids: List[str]):
+    async def import_game_times(self, game_ids: List[str]) -> None:
         """
         Override this method to return game times for
         games owned by the currently authenticated user.

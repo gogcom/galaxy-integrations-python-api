@@ -5,14 +5,14 @@ from galaxy.api.types import Game, Dlc, LicenseInfo
 from galaxy.api.consts import LicenseType
 from galaxy.api.errors import UnknownError
 
-def test_success(plugin, readline, write):
+def test_success(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
         "method": "import_owned_games"
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.get_owned_games.coro.return_value = [
         Game("3", "Doom", None, LicenseInfo(LicenseType.SinglePurchase, None)),
         Game(
@@ -67,14 +67,14 @@ def test_success(plugin, readline, write):
         }
     }
 
-def test_failure(plugin, readline, write):
+def test_failure(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
         "method": "import_owned_games"
     }
 
-    readline.side_effect = [json.dumps(request), ""]
+    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
     plugin.get_owned_games.coro.side_effect = UnknownError()
     asyncio.run(plugin.run())
     plugin.get_owned_games.assert_called_with()
