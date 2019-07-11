@@ -12,12 +12,12 @@ The provided features are:
 
 - multistep authorization using a browser built into GOG Galaxy 2.0
 - support for GOG Galaxy 2.0 features:
-    - importing owned and detecting installed games
-    - installing and launching games
-    - importing achievements and game time
-    - importing friends lists and statuses
-    - importing friends recommendations list
-    - receiving and sending chat messages
+  - importing owned and detecting installed games
+  - installing and launching games
+  - importing achievements and game time
+  - importing friends lists and statuses
+  - importing friends recommendations list
+  - receiving and sending chat messages
 - cache storage
 
 ## Platform Id's
@@ -65,7 +65,9 @@ The client has a built-in Python 3.7 interpreter, so integrations are delivered 
 In order to be found by GOG Galaxy 2.0 an integration folder should be placed in [lookup directory](#deploy-location). Beside all the Python files, the integration folder must contain [manifest.json](#deploy-manifest) and all third-party dependencies. See an [exemplary structure](#deploy-structure-example).
 
 ### Lookup directory
+
 <a name="deploy-location"></a>
+
 - Windows:
 
     `%localappdata%\GOG.com\Galaxy\plugins\installed`
@@ -75,7 +77,8 @@ In order to be found by GOG Galaxy 2.0 an integration folder should be placed in
     `~/Library/Application Support/GOG.com/Galaxy/plugins/installed`
 
 ### Manifest
-<a name="deploy-manifest"></a> 
+
+<a name="deploy-manifest"></a>
 Obligatory JSON file to be placed in an integration folder.
 
 ```json
@@ -91,6 +94,7 @@ Obligatory JSON file to be placed in an integration folder.
     "script": "plugin.py"
 }
 ```
+
 | property      | description |
 |---------------|---|
 | `guid`        |   |
@@ -99,6 +103,7 @@ Obligatory JSON file to be placed in an integration folder.
 | `script`      | path of the entry point module, relative to the integration folder |
 
 ### Dependencies
+
 All third-party packages (packages not included in the Python 3.7 standard library) should be deployed along with plugin files. Use the following command structure:
 
 ```pip install DEP --target DIR --implementation cp --python-version 37```
@@ -106,6 +111,7 @@ All third-party packages (packages not included in the Python 3.7 standard libra
 For example, a plugin that uses *requests* could have the following structure:
 
 <a name="deploy-structure-example"></a>
+
 ```bash
 installed
 └── my_integration
