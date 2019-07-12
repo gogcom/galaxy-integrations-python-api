@@ -13,9 +13,13 @@ from galaxy.api.errors import (
 )
 
 
+DEFAULT_LIMIT = 20
+DEFAULT_TIMEOUT = 60  # seconds
+
+
 class HttpClient:
     """Deprecated"""
-    def __init__(self, limit=20, timeout=aiohttp.ClientTimeout(total=60), cookie_jar=None):
+    def __init__(self, limit=DEFAULT_LIMIT, timeout=aiohttp.ClientTimeout(total=DEFAULT_TIMEOUT), cookie_jar=None):
         connector = create_tcp_connector(limit=limit)
         self._session = create_client_session(connector=connector, timeout=timeout, cookie_jar=cookie_jar)
 
@@ -31,13 +35,13 @@ def create_tcp_connector(*args, **kwargs):
     ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     ssl_context.load_verify_locations(certifi.where())
     kwargs.setdefault("ssl", ssl_context)
-    kwargs.setdefault("limit", 20)
+    kwargs.setdefault("limit", DEFAULT_LIMIT)
     return aiohttp.TCPConnector(*args, **kwargs)
 
 
 def create_client_session(*args, **kwargs):
     kwargs.setdefault("connector", create_tcp_connector())
-    kwargs.setdefault("timeout", aiohttp.ClientTimeout(total=60))
+    kwargs.setdefault("timeout", aiohttp.ClientTimeout(total=DEFAULT_TIMEOUT))
     kwargs.setdefault("raise_for_status", True)
     return aiohttp.ClientSession(*args, **kwargs)
 
