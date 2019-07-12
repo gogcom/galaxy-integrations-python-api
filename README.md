@@ -1,12 +1,12 @@
 # GOG Galaxy Integrations Python API
 
-This Python library allows to easily build community integrations for various gaming platforms with GOG Galaxy 2.0.
+This Python library allows developers to easily build community integrations for various gaming platforms with GOG Galaxy 2.0.
 
 - refer to our <a href='https://galaxy-integrations-python-api.readthedocs.io'>documentation</a>
 
 ## Features
 
-Each integration in GOG Galaxy 2.0 comes as a separate Python script, and is launched as a separate process, that which needs to communicate with main instance of GOG Galaxy 2.0.
+Each integration in GOG Galaxy 2.0 comes as a separate Python script and is launched as a separate process that needs to communicate with the main instance of GOG Galaxy 2.0.
 
 The provided features are:
 
@@ -28,8 +28,8 @@ Each integration can implement only one platform. Each integration must declare 
 
 ## Basic usage
 
-Each integration should inherit from the :class:`~galaxy.api.plugin.Plugin` class. Supported methods like :meth:`~galaxy.api.plugin.Plugin.get_owned_games` should be overwritten - they are called from the GOG Galaxy client in the appropriate times.
-Each of those method can raise exceptions inherited from the :exc:`~galaxy.api.jsonrpc.ApplicationError`.
+Each integration should inherit from the :class:`~galaxy.api.plugin.Plugin` class. Supported methods like :meth:`~galaxy.api.plugin.Plugin.get_owned_games` should be overwritten - they are called from the GOG Galaxy client at the appropriate times.
+Each of those methods can raise exceptions inherited from the :exc:`~galaxy.api.jsonrpc.ApplicationError`.
 Communication between an integration and the client is also possible with the use of notifications, for example: :meth:`~galaxy.api.plugin.Plugin.update_local_game_status`.
 
 ```python
@@ -61,8 +61,8 @@ if __name__ == "__main__":
 
 ## Deployment
 
-The client has a built-in Python 3.7 interpreter, so the integrations are delivered as python modules.
-In order to be found by GOG Galaxy 2.0 an integration folder should be placed in [lookup directory](#deploy-location). Beside all the python files, the integration folder has to contain [manifest.json](#deploy-manifest) and all third-party dependencies. See an [exemplary structure](#deploy-structure-example).
+The client has a built-in Python 3.7 interpreter, so integrations are delivered as Python modules.
+In order to be found by GOG Galaxy 2.0 an integration folder should be placed in [lookup directory](#deploy-location). Beside all the Python files, the integration folder must contain [manifest.json](#deploy-manifest) and all third-party dependencies. See an [exemplary structure](#deploy-structure-example).
 
 ### Lookup directory
 
@@ -79,7 +79,7 @@ In order to be found by GOG Galaxy 2.0 an integration folder should be placed in
 ### Manifest
 
 <a name="deploy-manifest"></a>
-Obligatory JSON file to be placed in a integration folder.
+Obligatory JSON file to be placed in an integration folder.
 
 ```json
 {
@@ -104,11 +104,11 @@ Obligatory JSON file to be placed in a integration folder.
 
 ### Dependencies
 
-All third-party packages (packages not included in Python 3.7 standard library) should be deployed along with plugin files. Use the following command structure:
+All third-party packages (packages not included in the Python 3.7 standard library) should be deployed along with plugin files. Use the following command structure:
 
 ```pip install DEP --target DIR --implementation cp --python-version 37```
 
-For example plugin that uses *requests* has structure as follows:
+For example, a plugin that uses *requests* could have the following structure:
 
 <a name="deploy-structure-example"></a>
 
