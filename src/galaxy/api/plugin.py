@@ -107,6 +107,11 @@ class Plugin:
             self.uninstall_game,
             feature=Feature.UninstallGame
         )
+        self._register_notification(
+            "shutdown_platform_client",
+            self.shutdown_platform_client,
+            feature=Feature.ShutdownPlatformClient
+        )
         self._register_method(
             "import_friends",
             self.get_friends,
@@ -716,6 +721,11 @@ class Plugin:
                 await self.open_uri(f"start client://uninstallgame/{game_id}")
 
         """
+        raise NotImplementedError()
+
+    async def shutdown_platform_client(self) -> None:
+        """Override this method to gracefully terminate platform client.
+        This method is called by the GOG Galaxy Client."""
         raise NotImplementedError()
 
     async def get_friends(self) -> List[FriendInfo]:

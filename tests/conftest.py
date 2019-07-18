@@ -48,7 +48,8 @@ def plugin(reader, writer):
         "get_rooms",
         "get_room_history_from_message",
         "get_room_history_from_timestamp",
-        "get_game_times"
+        "get_game_times",
+        "shutdown_platform_client"
     )
 
     methods = (
