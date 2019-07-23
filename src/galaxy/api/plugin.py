@@ -894,6 +894,9 @@ def create_and_run_plugin(plugin_class, argv):
         await plugin.run()
 
     try:
+        if sys.platform == "win32":
+            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
         asyncio.run(coroutine())
     except Exception:
         logging.exception("Error while running plugin")
