@@ -42,12 +42,6 @@ def plugin(reader, writer):
         "install_game",
         "uninstall_game",
         "get_friends",
-        "get_users",
-        "send_message",
-        "mark_as_read",
-        "get_rooms",
-        "get_room_history_from_message",
-        "get_room_history_from_timestamp",
         "get_game_times",
         "shutdown_platform_client"
     )

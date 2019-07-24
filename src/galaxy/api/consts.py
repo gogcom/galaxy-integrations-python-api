@@ -117,11 +117,3 @@ class LocalGameState(Flag):
     None_ = 0
     Installed = 1
     Running = 2
-
-
-class PresenceState(Enum):
-    """"Possible states that a user can be in."""
-    Unknown = "Unknown"
-    Online = "online"
-    Offline = "offline"
-    Away = "away"

@@ -10,12 +10,12 @@ import sys
 
 from typing import Any, List, Dict, Optional, Union
 
-from galaxy.api.types import Achievement, Game, LocalGame, FriendInfo, GameTime, UserInfo, Room
+from galaxy.api.types import Achievement, Game, LocalGame, FriendInfo, GameTime
 
 from galaxy.api.jsonrpc import Server, NotificationClient, ApplicationError
 from galaxy.api.consts import Feature
 from galaxy.api.errors import UnknownError, ImportInProgress
-from galaxy.api.types import Authentication, NextStep, Message
+from galaxy.api.types import Authentication, NextStep
 
 
 class JSONEncoder(json.JSONEncoder):
@@ -121,40 +121,6 @@ class Plugin:
             self.get_friends,
             result_name="friend_info_list",
             feature=Feature.ImportFriends
-        )
-        self._register_method(
-            "import_user_infos",
-            self.get_users,
-            result_name="user_info_list",
-            feature=Feature.ImportUsers
-        )
-        self._register_method(
-            "send_message",
-            self.send_message,
-            feature=Feature.Chat
-        )
-        self._register_method(
-            "mark_as_read",
-            self.mark_as_read,
-            feature=Feature.Chat
-        )
-        self._register_method(
-            "import_rooms",
-            self.get_rooms,
-            result_name="rooms",
-            feature=Feature.Chat
-        )
-        self._register_method(
-            "import_room_history_from_message",
-            self.get_room_history_from_message,
-            result_name="messages",
-            feature=Feature.Chat
-        )
-        self._register_method(
-            "import_room_history_from_timestamp",
-            self.get_room_history_from_timestamp,
-            result_name="messages",
-            feature=Feature.Chat
         )
         self._register_method(
             "import_game_times",
@@ -440,26 +406,6 @@ class Plugin:
         """
         params = {"user_id": user_id}
         self._notification_client.notify("friend_removed", params)
-
-    def update_room(
-        self,
-        room_id: str,
-        unread_message_count: Optional[int]=None,
-        new_messages: Optional[List[Message]]=None
-    ) -> None:
-        """WIP, Notify the client to update the information regarding
-        a chat room that the currently authenticated user is in.
-
-        :param room_id: id of the room to update
-        :param unread_message_count: information about the new unread message count in the room
-        :param new_messages: list of new messages that the user received
-        """
-        params = {"room_id": room_id}
-        if unread_message_count is not None:
-            params["unread_message_count"] = unread_message_count
-        if new_messages is not None:
-            params["messages"] = new_messages
-        self._notification_client.notify("chat_room_updated", params)
 
     def update_game_time(self, game_time: GameTime) -> None:
         """Notify the client to update game time for a game.
@@ -769,57 +715,6 @@ class Plugin:
                 friends = self.retrieve_friends()
                 return friends
 
-        """
-        raise NotImplementedError()
-
-    async def get_users(self, user_id_list: List[str]) -> List[UserInfo]:
-        """WIP, Override this method to return the list of users matching the provided ids.
-        This method is called by the GOG Galaxy Client.
-
-        :param user_id_list: list of user ids
-        """
-        raise NotImplementedError()
-
-    async def send_message(self, room_id: str, message_text: str) -> None:
-        """WIP, Override this method to send message to a chat room.
-         This method is called by the GOG Galaxy Client.
-
-         :param room_id: id of the room to which the message should be sent
-         :param message_text: text which should be sent in the message
-         """
-        raise NotImplementedError()
-
-    async def mark_as_read(self, room_id: str, last_message_id: str) -> None:
-        """WIP, Override this method to mark messages in a chat room as read up to the id provided in the parameter.
-        This method is called by the GOG Galaxy Client.
-
-        :param room_id: id of the room
-        :param last_message_id: id of the last message; room is marked as read only if this id matches
-         the last message id known to the client
-        """
-        raise NotImplementedError()
-
-    async def get_rooms(self) -> List[Room]:
-        """WIP, Override this method to return the chat rooms in which the user is currently in.
-        This method is called by the GOG Galaxy Client
-        """
-        raise NotImplementedError()
-
-    async def get_room_history_from_message(self, room_id: str, message_id: str) -> List[Message]:
-        """WIP, Override this method to return the chat room history since the message provided in parameter.
-        This method is called by the GOG Galaxy Client.
-
-        :param room_id: id of the room
-        :param message_id: id of the message since which the history should be retrieved
-        """
-        raise NotImplementedError()
-
-    async def get_room_history_from_timestamp(self, room_id: str, from_timestamp: int) -> List[Message]:
-        """WIP, Override this method to return the chat room history since the timestamp provided in parameter.
-        This method is called by the GOG Galaxy Client.
-
-        :param room_id: id of the room
-        :param from_timestamp: timestamp since which the history should be retrieved
         """
         raise NotImplementedError()
 
