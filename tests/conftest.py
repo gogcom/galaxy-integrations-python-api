@@ -58,6 +58,7 @@ def plugin(reader, writer):
             stack.enter_context(patch.object(Plugin, method))
         yield Plugin(Platform.Generic, "0.1", reader, writer, "token")
 
+
 @pytest.fixture(autouse=True)
 def my_caplog(caplog):
     caplog.set_level(logging.DEBUG)
