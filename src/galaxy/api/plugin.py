@@ -367,7 +367,7 @@ class Plugin:
                         continue
                     self.update_local_game_status(LocalGame(game.id, game.status))
                     self._cached_games_statuses[game.id] = game.status
-                asyncio.sleep(5)  # interval
+                await asyncio.sleep(5)  # interval
 
             def tick(self):
                 if self._check_statuses_task is None or self._check_statuses_task.done():
