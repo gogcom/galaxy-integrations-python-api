@@ -1,94 +1,210 @@
-import asyncio
 import json
-from unittest.mock import call
+from unittest.mock import MagicMock
 
 import pytest
 from pytest import raises
 
 from galaxy.api.types import Achievement
-from galaxy.api.errors import UnknownError, ImportInProgress, BackendError
+from galaxy.api.errors import BackendError
+from galaxy.unittest.mock import async_return_value
+
+from tests import create_message, get_messages
+
 
 def test_initialization_no_unlock_time():
     with raises(Exception):
         Achievement(achievement_id="lvl30", achievement_name="Got level 30")
 
+
 def test_initialization_no_id_nor_name():
     with raises(AssertionError):
         Achievement(unlock_time=1234567890)
 
-def test_success(plugin, read, write):
+
+# TODO replace AsyncMocks with MagicMocks in conftest and use async_return_value
+@pytest.fixture()
+def reader():
+    stream = MagicMock(name="stream_reader")
+    stream.read = MagicMock()
+    yield stream
+
+
+@pytest.mark.asyncio
+async def test_get_unlocked_achievements_success(plugin, read, write):
+    plugin.prepare_achievements_context.coro.return_value = 5
     request = {
         "jsonrpc": "2.0",
         "id": "3",
-        "method": "import_unlocked_achievements",
+        "method": "start_achievements_import",
         "params": {
-            "game_id": "14"
+            "game_ids": ["14"]
         }
     }
-    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
     plugin.get_unlocked_achievements.coro.return_value = [
         Achievement(achievement_id="lvl10", unlock_time=1548421241),
         Achievement(achievement_name="Got level 20", unlock_time=1548422395),
         Achievement(achievement_id="lvl30", achievement_name="Got level 30", unlock_time=1548495633)
     ]
-    asyncio.run(plugin.run())
-    plugin.get_unlocked_achievements.assert_called_with(game_id="14")
-    response = json.loads(write.call_args[0][0])
+    await plugin.run()
+    plugin.prepare_achievements_context.assert_called_with(["14"])
+    plugin.get_unlocked_achievements.assert_called_with("14", 5)
 
-    assert response == {
-        "jsonrpc": "2.0",
-        "id": "3",
-        "result": {
-            "unlocked_achievements": [
-                {
-                    "achievement_id": "lvl10",
-                    "unlock_time": 1548421241
-                },
-                {
-                    "achievement_name": "Got level 20",
-                    "unlock_time": 1548422395
-                },
-                {
-                    "achievement_id": "lvl30",
-                    "achievement_name": "Got level 30",
-                    "unlock_time": 1548495633
-                }
-            ]
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "id": "3",
+            "result": None
+        },
+        {
+            "jsonrpc": "2.0",
+            "method": "game_achievements_import_success",
+            "params": {
+                "game_id": "14",
+                "unlocked_achievements": [
+                    {
+                        "achievement_id": "lvl10",
+                        "unlock_time": 1548421241
+                    },
+                    {
+                        "achievement_name": "Got level 20",
+                        "unlock_time": 1548422395
+                    },
+                    {
+                        "achievement_id": "lvl30",
+                        "achievement_name": "Got level 30",
+                        "unlock_time": 1548495633
+                    }
+                ]
+            }
+        },
+        {
+            "jsonrpc": "2.0",
+            "method": "achievements_import_finished",
+            "params": None
         }
-    }
+    ]
 
-def test_failure(plugin, read, write):
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("exception,code,message", [
+    (BackendError, 4, "Backend error"),
+    (KeyError, 0, "Unknown error")
+])
+async def test_get_unlocked_achievements_error(exception, code, message, plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
-        "method": "import_unlocked_achievements",
+        "method": "start_achievements_import",
         "params": {
-            "game_id": "14"
+            "game_ids": ["14"]
         }
     }
 
-    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
-    plugin.get_unlocked_achievements.coro.side_effect = UnknownError()
-    asyncio.run(plugin.run())
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
+    plugin.get_unlocked_achievements.coro.side_effect = exception
+    await plugin.run()
     plugin.get_unlocked_achievements.assert_called()
-    response = json.loads(write.call_args[0][0])
 
-    assert response == {
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "id": "3",
+            "result": None
+        },
+        {
+            "jsonrpc": "2.0",
+            "method": "game_achievements_import_failure",
+            "params": {
+                "game_id": "14",
+                "error": {
+                    "code": code,
+                    "message": message
+                }
+            }
+        },
+        {
+            "jsonrpc": "2.0",
+            "method": "achievements_import_finished",
+            "params": None
+        }
+    ]
+
+@pytest.mark.asyncio
+async def test_prepare_get_unlocked_achievements_context_error(plugin, read, write):
+    plugin.prepare_achievements_context.coro.side_effect = BackendError()
+    request = {
         "jsonrpc": "2.0",
         "id": "3",
-        "error": {
-            "code": 0,
-            "message": "Unknown error"
+        "method": "start_achievements_import",
+        "params": {
+            "game_ids": ["14"]
         }
     }
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"")]
+    await plugin.run()
 
-def test_unlock_achievement(plugin, write):
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "id": "3",
+            "error": {
+                "code": 4,
+                "message": "Backend error"
+            }
+        }
+    ]
+
+
+@pytest.mark.asyncio
+async def test_import_in_progress(plugin, read, write):
+    requests = [
+        {
+            "jsonrpc": "2.0",
+            "id": "3",
+            "method": "start_achievements_import",
+            "params": {
+                "game_ids": ["14"]
+            }
+        },
+        {
+            "jsonrpc": "2.0",
+            "id": "4",
+            "method": "start_achievements_import",
+            "params": {
+                "game_ids": ["15"]
+            }
+        }
+    ]
+    read.side_effect = [
+        async_return_value(create_message(requests[0])),
+        async_return_value(create_message(requests[1])),
+        async_return_value(b"")
+    ]
+
+    await plugin.run()
+
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "id": "3",
+            "result": None
+        },
+        {
+            "jsonrpc": "2.0",
+            "id": "4",
+            "error": {
+                "code": 600,
+                "message": "Import already in progress"
+            }
+        }
+    ]
+
+
+@pytest.mark.asyncio
+async def test_unlock_achievement(plugin, write):
     achievement = Achievement(achievement_id="lvl20", unlock_time=1548422395)
-
-    async def couritine():
-        plugin.unlock_achievement("14", achievement)
-
-    asyncio.run(couritine())
+    plugin.unlock_achievement("14", achievement)
     response = json.loads(write.call_args[0][0])
 
     assert response == {
@@ -102,92 +218,3 @@ def test_unlock_achievement(plugin, write):
             }
         }
     }
-
-@pytest.mark.asyncio
-async def test_game_achievements_import_success(plugin, write):
-    achievements = [
-        Achievement(achievement_id="lvl10", unlock_time=1548421241),
-        Achievement(achievement_name="Got level 20", unlock_time=1548422395)
-    ]
-    plugin.game_achievements_import_success("134", achievements)
-    response = json.loads(write.call_args[0][0])
-
-    assert response == {
-        "jsonrpc": "2.0",
-        "method": "game_achievements_import_success",
-        "params": {
-            "game_id": "134",
-            "unlocked_achievements": [
-                {
-                    "achievement_id": "lvl10",
-                    "unlock_time": 1548421241
-                },
-                {
-                    "achievement_name": "Got level 20",
-                    "unlock_time": 1548422395
-                }
-            ]
-        }
-    }
-
-@pytest.mark.asyncio
-async def test_game_achievements_import_failure(plugin, write):
-    plugin.game_achievements_import_failure("134", ImportInProgress())
-    response = json.loads(write.call_args[0][0])
-
-    assert response == {
-        "jsonrpc": "2.0",
-        "method": "game_achievements_import_failure",
-        "params": {
-            "game_id": "134",
-            "error": {
-                "code": 600,
-                "message": "Import already in progress"
-            }
-        }
-    }
-
-@pytest.mark.asyncio
-async def test_achievements_import_finished(plugin, write):
-    plugin.achievements_import_finished()
-    response = json.loads(write.call_args[0][0])
-
-    assert response == {
-        "jsonrpc": "2.0",
-        "method": "achievements_import_finished",
-        "params": None
-    }
-
-@pytest.mark.asyncio
-async def test_start_achievements_import(plugin, write, mocker):
-    game_achievements_import_success = mocker.patch.object(plugin, "game_achievements_import_success")
-    game_achievements_import_failure = mocker.patch.object(plugin, "game_achievements_import_failure")
-    achievements_import_finished = mocker.patch.object(plugin, "achievements_import_finished")
-
-    game_ids = ["1", "5", "9"]
-    error = BackendError()
-    achievements = [
-        Achievement(achievement_id="lvl10", unlock_time=1548421241),
-        Achievement(achievement_name="Got level 20", unlock_time=1548422395)
-    ]
-    plugin.get_unlocked_achievements.coro.side_effect = [
-        achievements,
-        [],
-        error
-    ]
-    await plugin.start_achievements_import(game_ids)
-
-    with pytest.raises(ImportInProgress):
-        await plugin.start_achievements_import(["4", "8"])
-
-    # wait until all tasks are finished
-    for _ in range(4):
-        await asyncio.sleep(0)
-
-    plugin.get_unlocked_achievements.coro.assert_has_calls([call("1"), call("5"), call("9")])
-    game_achievements_import_success.assert_has_calls([
-        call("1", achievements),
-        call("5", [])
-    ])
-    game_achievements_import_failure.assert_called_once_with("9", error)
-    achievements_import_finished.assert_called_once_with()

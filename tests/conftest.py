@@ -6,7 +6,7 @@ import pytest
 
 from galaxy.api.plugin import Plugin
 from galaxy.api.consts import Platform
-from galaxy.unittest.mock import AsyncMock, coroutine_mock
+from galaxy.unittest.mock import AsyncMock, coroutine_mock, skip_loop
 
 @pytest.fixture()
 def reader():
@@ -15,11 +15,12 @@ def reader():
     yield stream
 
 @pytest.fixture()
-def writer():
+async def writer():
     stream = MagicMock(name="stream_writer")
     stream.write = MagicMock()
-    stream.drain = AsyncMock()
+    stream.drain = AsyncMock(return_value=None)
     yield stream
+    await skip_loop(1) # drain
 
 @pytest.fixture()
 def read(reader):
@@ -36,13 +37,15 @@ def plugin(reader, writer):
         "handshake_complete",
         "authenticate",
         "get_owned_games",
+        "prepare_achievements_context",
         "get_unlocked_achievements",
         "get_local_games",
         "launch_game",
         "install_game",
         "uninstall_game",
         "get_friends",
-        "get_game_times",
+        "get_game_time",
+        "prepare_game_times_context",
         "shutdown_platform_client"
     )
 

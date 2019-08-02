@@ -1,71 +1,205 @@
 import asyncio
 import json
-from unittest.mock import call
+from unittest.mock import MagicMock, call
 
 import pytest
 from galaxy.api.types import GameTime
-from galaxy.api.errors import UnknownError, ImportInProgress, BackendError
+from galaxy.api.errors import BackendError
+from galaxy.unittest.mock import async_return_value
 
-def test_success(plugin, read, write):
+from tests import create_message, get_messages
+
+# TODO replace AsyncMocks with MagicMocks in conftest and use async_return_value
+@pytest.fixture()
+def reader():
+    stream = MagicMock(name="stream_reader")
+    stream.read = MagicMock()
+    yield stream
+
+
+@pytest.mark.asyncio
+async def test_get_game_time_success(plugin, read, write):
+    plugin.prepare_game_times_context.coro.return_value = "abc"
     request = {
         "jsonrpc": "2.0",
         "id": "3",
-        "method": "import_game_times"
+        "method": "start_game_times_import",
+        "params": {
+            "game_ids": ["3", "5", "7"]
+        }
     }
-
-    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
-    plugin.get_game_times.coro.return_value = [
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
+    plugin.get_game_time.coro.side_effect = [
         GameTime("3", 60, 1549550504),
         GameTime("5", 10, None),
         GameTime("7", None, 1549550502),
     ]
-    asyncio.run(plugin.run())
-    plugin.get_game_times.assert_called_with()
-    response = json.loads(write.call_args[0][0])
+    await plugin.run()
+    plugin.get_game_time.assert_has_calls([
+        call("3", "abc"),
+        call("5", "abc"),
+        call("7", "abc"),
+    ])
 
-    assert response == {
-        "jsonrpc": "2.0",
-        "id": "3",
-        "result": {
-            "game_times": [
-                {
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "id": "3",
+            "result": None
+        },
+        {
+            "jsonrpc": "2.0",
+            "method": "game_time_import_success",
+            "params": {
+                "game_time": {
                     "game_id": "3",
-                    "time_played": 60,
-                    "last_played_time": 1549550504
-                },
-                {
-                    "game_id": "5",
-                    "time_played": 10,
-                },
-                {
-                    "game_id": "7",
-                     "last_played_time": 1549550502
+                    "last_played_time": 1549550504,
+                    "time_played": 60
                 }
-            ]
+            }
+        },
+        {
+            "jsonrpc": "2.0",
+            "method": "game_time_import_success",
+            "params": {
+                "game_time": {
+                    "game_id": "5",
+                    "time_played": 10
+                }
+            }
+        },
+        {
+            "jsonrpc": "2.0",
+            "method": "game_time_import_success",
+            "params": {
+                "game_time": {
+                    "game_id": "7",
+                    "last_played_time": 1549550502
+                }
+            }
+        },
+        {
+            "jsonrpc": "2.0",
+            "method": "game_times_import_finished",
+            "params": None
         }
-    }
+    ]
 
-def test_failure(plugin, read, write):
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("exception,code,message", [
+    (BackendError, 4, "Backend error"),
+    (KeyError, 0, "Unknown error")
+])
+async def test_get_game_time_error(exception, code, message, plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
-        "method": "import_game_times"
-    }
-
-    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
-    plugin.get_game_times.coro.side_effect = UnknownError()
-    asyncio.run(plugin.run())
-    plugin.get_game_times.assert_called_with()
-    response = json.loads(write.call_args[0][0])
-
-    assert response == {
-        "jsonrpc": "2.0",
-        "id": "3",
-        "error": {
-            "code": 0,
-            "message": "Unknown error",
+        "method": "start_game_times_import",
+        "params": {
+            "game_ids": ["6"]
         }
     }
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
+    plugin.get_game_time.coro.side_effect = exception
+    await plugin.run()
+    plugin.get_game_time.assert_called()
+
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "id": "3",
+            "result": None
+        },
+        {
+            "jsonrpc": "2.0",
+            "method": "game_time_import_failure",
+            "params": {
+                "game_id": "6",
+                "error": {
+                    "code": code,
+                    "message": message
+                }
+            }
+        },
+        {
+            "jsonrpc": "2.0",
+            "method": "game_times_import_finished",
+            "params": None
+        }
+    ]
+
+
+@pytest.mark.asyncio
+async def test_prepare_get_game_time_context_error(plugin, read, write):
+    plugin.prepare_game_times_context.coro.side_effect = BackendError()
+    request = {
+        "jsonrpc": "2.0",
+        "id": "3",
+        "method": "start_game_times_import",
+        "params": {
+            "game_ids": ["6"]
+        }
+    }
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"")]
+    await plugin.run()
+
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "id": "3",
+            "error": {
+                "code": 4,
+                "message": "Backend error"
+            }
+        }
+    ]
+
+
+@pytest.mark.asyncio
+async def test_import_in_progress(plugin, read, write):
+    requests = [
+        {
+            "jsonrpc": "2.0",
+            "id": "3",
+            "method": "start_game_times_import",
+            "params": {
+                "game_ids": ["6"]
+            }
+        },
+        {
+            "jsonrpc": "2.0",
+            "id": "4",
+            "method": "start_game_times_import",
+            "params": {
+                "game_ids": ["7"]
+            }
+        }
+    ]
+    read.side_effect = [
+        async_return_value(create_message(requests[0])),
+        async_return_value(create_message(requests[1])),
+        async_return_value(b"")
+    ]
+
+    await plugin.run()
+
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "id": "3",
+            "result": None
+        },
+        {
+            "jsonrpc": "2.0",
+            "id": "4",
+            "error": {
+                "code": 600,
+                "message": "Import already in progress"
+            }
+        }
+    ]
+
 
 def test_update_game(plugin, write):
     game_time = GameTime("3", 60, 1549550504)
@@ -87,93 +221,3 @@ def test_update_game(plugin, write):
             }
         }
     }
-
-@pytest.mark.asyncio
-async def test_game_time_import_success(plugin, write):
-    plugin.game_time_import_success(GameTime("3", 60, 1549550504))
-    response = json.loads(write.call_args[0][0])
-
-    assert response == {
-        "jsonrpc": "2.0",
-        "method": "game_time_import_success",
-        "params": {
-            "game_time": {
-                "game_id": "3",
-                "time_played": 60,
-                "last_played_time": 1549550504
-            }
-        }
-    }
-
-@pytest.mark.asyncio
-async def test_game_time_import_failure(plugin, write):
-    plugin.game_time_import_failure("134", ImportInProgress())
-    response = json.loads(write.call_args[0][0])
-
-    assert response == {
-        "jsonrpc": "2.0",
-        "method": "game_time_import_failure",
-        "params": {
-            "game_id": "134",
-            "error": {
-                "code": 600,
-                "message": "Import already in progress"
-            }
-        }
-    }
-
-@pytest.mark.asyncio
-async def test_game_times_import_finished(plugin, write):
-    plugin.game_times_import_finished()
-    response = json.loads(write.call_args[0][0])
-
-    assert response == {
-        "jsonrpc": "2.0",
-        "method": "game_times_import_finished",
-        "params": None
-    }
-
-@pytest.mark.asyncio
-async def test_start_game_times_import(plugin, write, mocker):
-    game_time_import_success = mocker.patch.object(plugin, "game_time_import_success")
-    game_time_import_failure = mocker.patch.object(plugin, "game_time_import_failure")
-    game_times_import_finished = mocker.patch.object(plugin, "game_times_import_finished")
-
-    game_ids = ["1", "5"]
-    game_time = GameTime("1", 10, 1549550502)
-    plugin.get_game_times.coro.return_value = [
-        game_time
-    ]
-    await plugin.start_game_times_import(game_ids)
-
-    with pytest.raises(ImportInProgress):
-        await plugin.start_game_times_import(["4", "8"])
-
-    # wait until all tasks are finished
-    for _ in range(4):
-        await asyncio.sleep(0)
-
-    plugin.get_game_times.coro.assert_called_once_with()
-    game_time_import_success.assert_called_once_with(game_time)
-    game_time_import_failure.assert_called_once_with("5", UnknownError())
-    game_times_import_finished.assert_called_once_with()
-
-@pytest.mark.asyncio
-async def test_start_game_times_import_failure(plugin, write, mocker):
-    game_time_import_failure = mocker.patch.object(plugin, "game_time_import_failure")
-    game_times_import_finished = mocker.patch.object(plugin, "game_times_import_finished")
-
-    game_ids = ["1", "5"]
-    error = BackendError()
-    plugin.get_game_times.coro.side_effect = error
-
-    await plugin.start_game_times_import(game_ids)
-
-    # wait until all tasks are finished
-    for _ in range(4):
-        await asyncio.sleep(0)
-
-    plugin.get_game_times.coro.assert_called_once_with()
-
-    assert game_time_import_failure.mock_calls == [call("1", error), call("5", error)]
-    game_times_import_finished.assert_called_once_with()

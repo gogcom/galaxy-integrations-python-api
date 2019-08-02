@@ -89,15 +89,8 @@ class Plugin:
         )
         self._detect_feature(Feature.ImportOwnedGames, ["get_owned_games"])
 
-        self._register_method(
-            "import_unlocked_achievements",
-            self.get_unlocked_achievements,
-            result_name="unlocked_achievements"
-        )
+        self._register_method("start_achievements_import", self._start_achievements_import)
         self._detect_feature(Feature.ImportAchievements, ["get_unlocked_achievements"])
-
-        self._register_method("start_achievements_import", self.start_achievements_import)
-        self._detect_feature(Feature.ImportAchievements, ["import_games_achievements"])
 
         self._register_method("import_local_games", self.get_local_games, result_name="local_games")
         self._detect_feature(Feature.ImportInstalledGames, ["get_local_games"])
@@ -117,11 +110,8 @@ class Plugin:
         self._register_method("import_friends", self.get_friends, result_name="friend_info_list")
         self._detect_feature(Feature.ImportFriends, ["get_friends"])
 
-        self._register_method("import_game_times", self.get_game_times, result_name="game_times")
-        self._detect_feature(Feature.ImportGameTime, ["get_game_times"])
-
-        self._register_method("start_game_times_import", self.start_game_times_import)
-        self._detect_feature(Feature.ImportGameTime, ["import_game_times"])
+        self._register_method("start_game_times_import", self._start_game_times_import)
+        self._detect_feature(Feature.ImportGameTime, ["get_game_time"])
 
     @property
     def features(self) -> List[Feature]:
@@ -316,26 +306,14 @@ class Plugin:
         }
         self._notification_client.notify("achievement_unlocked", params)
 
-    def game_achievements_import_success(self, game_id: str, achievements: List[Achievement]) -> None:
-        """Notify the client that import of achievements for a given game has succeeded.
-        This method is called by import_games_achievements.
-
-        :param game_id: id of the game for which the achievements were imported
-        :param achievements: list of imported achievements
-        """
+    def _game_achievements_import_success(self, game_id: str, achievements: List[Achievement]) -> None:
         params = {
             "game_id": game_id,
             "unlocked_achievements": achievements
         }
         self._notification_client.notify("game_achievements_import_success", params)
 
-    def game_achievements_import_failure(self, game_id: str, error: ApplicationError) -> None:
-        """Notify the client that import of achievements for a given game has failed.
-        This method is called by import_games_achievements.
-
-        :param game_id: id of the game for which the achievements import failed
-        :param error: error which prevented the achievements import
-        """
+    def _game_achievements_import_failure(self, game_id: str, error: ApplicationError) -> None:
         params = {
             "game_id": game_id,
             "error": {
@@ -345,9 +323,7 @@ class Plugin:
         }
         self._notification_client.notify("game_achievements_import_failure", params)
 
-    def achievements_import_finished(self) -> None:
-        """Notify the client that importing achievements has finished.
-        This method is called by import_games_achievements_task"""
+    def _achievements_import_finished(self) -> None:
         self._notification_client.notify("achievements_import_finished", None)
 
     def update_local_game_status(self, local_game: LocalGame) -> None:
@@ -400,22 +376,11 @@ class Plugin:
         params = {"game_time": game_time}
         self._notification_client.notify("game_time_updated", params)
 
-    def game_time_import_success(self, game_time: GameTime) -> None:
-        """Notify the client that import of a given game_time has succeeded.
-        This method is called by import_game_times.
-
-        :param game_time: game_time which was imported
-        """
+    def _game_time_import_success(self, game_time: GameTime) -> None:
         params = {"game_time": game_time}
         self._notification_client.notify("game_time_import_success", params)
 
-    def game_time_import_failure(self, game_id: str, error: ApplicationError) -> None:
-        """Notify the client that import of a game time for a given game has failed.
-        This method is called by import_game_times.
-
-        :param game_id: id of the game for which the game time could not be imported
-        :param error:   error which prevented the game time import
-        """
+    def _game_time_import_failure(self, game_id: str, error: ApplicationError) -> None:
         params = {
             "game_id": game_id,
             "error": {
@@ -425,10 +390,7 @@ class Plugin:
         }
         self._notification_client.notify("game_time_import_failure", params)
 
-    def game_times_import_finished(self) -> None:
-        """Notify the client that importing game times has finished.
-        This method is called by :meth:`~.import_game_times_task`.
-        """
+    def _game_times_import_finished(self) -> None:
         self._notification_client.notify("game_times_import_finished", None)
 
     def lost_authentication(self) -> None:
@@ -557,51 +519,51 @@ class Plugin:
         """
         raise NotImplementedError()
 
-    async def get_unlocked_achievements(self, game_id: str) -> List[Achievement]:
-        """
-        .. deprecated:: 0.33
-            Use :meth:`~.import_games_achievements`.
-        """
-        raise NotImplementedError()
-
-    async def start_achievements_import(self, game_ids: List[str]) -> None:
-        """Starts the task of importing achievements.
-        This method is called by the GOG Galaxy Client.
-
-        :param game_ids: ids of the games for which the achievements are imported
-        """
+    async def _start_achievements_import(self, game_ids: List[str]) -> None:
         if self._achievements_import_in_progress:
             raise ImportInProgress()
 
-        async def import_games_achievements_task(game_ids):
+        context = await self.prepare_achievements_context(game_ids)
+
+        async def import_game_achievements(game_id, context_):
             try:
-                await self.import_games_achievements(game_ids)
+                achievements = await self.get_unlocked_achievements(game_id, context_)
+                self._game_achievements_import_success(game_id, achievements)
+            except ApplicationError as error:
+                self._game_achievements_import_failure(game_id, error)
+            except Exception:
+                logging.exception("Unexpected exception raised in import_game_achievements")
+                self._game_achievements_import_failure(game_id, UnknownError())
+
+        async def import_games_achievements(game_ids_, context_):
+            try:
+                imports = [import_game_achievements(game_id, context_) for game_id in game_ids_]
+                await asyncio.gather(*imports)
             finally:
-                self.achievements_import_finished()
+                self._achievements_import_finished()
                 self._achievements_import_in_progress = False
 
-        asyncio.create_task(import_games_achievements_task(game_ids))
+        self.create_task(import_games_achievements(game_ids, context), "Games unlocked achievements import")
         self._achievements_import_in_progress = True
 
-    async def import_games_achievements(self, game_ids: List[str]) -> None:
+    async def prepare_achievements_context(self, game_ids: List[str]) -> None:
+        """Override this method to prepare context for get_unlocked_achievements.
+
+        This allows for optimizations like batch requests to platform API.
+        Default implementation returns None.
         """
-        Override this method to return the unlocked achievements
-        of the user that is currently logged in to the plugin.
-        Call game_achievements_import_success/game_achievements_import_failure for each game_id on the list.
-        This method is called by the GOG Galaxy Client.
+        return None
 
-        :param game_ids: ids of the games for which to import unlocked achievements
+    async def get_unlocked_achievements(self, game_id: str, context: Any) -> List[Achievement]:
+        """Override this method to return list of unlocked achievements
+        for the game identified by the provided game_id.
+        This method is called by import task initialized by GOG Galaxy Client.
+
+        :param game_id:
+        :param context: Value return from :meth:`prepare_achievements_context`
+        :return:
         """
-
-        async def import_game_achievements(game_id):
-            try:
-                achievements = await self.get_unlocked_achievements(game_id)
-                self.game_achievements_import_success(game_id, achievements)
-            except Exception as error:
-                self.game_achievements_import_failure(game_id, error)
-
-        imports = [import_game_achievements(game_id) for game_id in game_ids]
-        await asyncio.gather(*imports)
+        raise NotImplementedError()
 
     async def get_local_games(self) -> List[LocalGame]:
         """Override this method to return the list of
@@ -704,54 +666,50 @@ class Plugin:
         """
         raise NotImplementedError()
 
-    async def get_game_times(self) -> List[GameTime]:
-        """
-        .. deprecated:: 0.33
-            Use :meth:`~.import_game_times`.
-        """
-        raise NotImplementedError()
-
-    async def start_game_times_import(self, game_ids: List[str]) -> None:
-        """Starts the task of importing game times
-        This method is called by the GOG Galaxy Client.
-
-        :param game_ids: ids of the games for which the game time is imported
-        """
+    async def _start_game_times_import(self, game_ids: List[str]) -> None:
         if self._game_times_import_in_progress:
             raise ImportInProgress()
 
-        async def import_game_times_task(game_ids):
+        context = await self.prepare_game_times_context(game_ids)
+
+        async def import_game_time(game_id, context_):
             try:
-                await self.import_game_times(game_ids)
+                game_time = await self.get_game_time(game_id, context_)
+                self._game_time_import_success(game_time)
+            except ApplicationError as error:
+                self._game_time_import_failure(game_id, error)
+            except Exception:
+                logging.exception("Unexpected exception raised in import_game_time")
+                self._game_time_import_failure(game_id, UnknownError())
+
+        async def import_game_times(game_ids_, context_):
+            try:
+                imports = [import_game_time(game_id, context_) for game_id in game_ids_]
+                await asyncio.gather(*imports)
             finally:
-                self.game_times_import_finished()
+                self._game_times_import_finished()
                 self._game_times_import_in_progress = False
 
-        asyncio.create_task(import_game_times_task(game_ids))
+        self.create_task(import_game_times(game_ids, context), "Game times import")
         self._game_times_import_in_progress = True
 
-    async def import_game_times(self, game_ids: List[str]) -> None:
+    async def prepare_game_times_context(self, game_ids: List[str]) -> None:
+        """Override this method to prepare context for get_game_time.
+        This allows for optimizations like batch requests to platform API.
+        Default implementation returns None.
         """
-        Override this method to return game times for
-        games owned by the currently authenticated user.
-        Call game_time_import_success/game_time_import_failure for each game_id on the list.
-        This method is called by GOG Galaxy Client.
+        return None
 
-        :param game_ids: ids of the games for which the game time is imported
+    async def get_game_time(self, game_id: str, context: Any) -> GameTime:
+        """Override this method to return the game time for the game
+        identified by the provided game_id.
+        This method is called by import task initialized by GOG Galaxy Client.
+
+        :param game_id:
+        :param context: Value return from :meth:`prepare_game_times_context`
+        :return:
         """
-        try:
-            game_times = await self.get_game_times()
-            game_ids_set = set(game_ids)
-            for game_time in game_times:
-                if game_time.game_id not in game_ids_set:
-                    continue
-                self.game_time_import_success(game_time)
-                game_ids_set.discard(game_time.game_id)
-            for game_id in game_ids_set:
-                self.game_time_import_failure(game_id, UnknownError())
-        except Exception as error:
-            for game_id in game_ids:
-                self.game_time_import_failure(game_id, error)
+        raise NotImplementedError()
 
 
 def create_and_run_plugin(plugin_class, argv):

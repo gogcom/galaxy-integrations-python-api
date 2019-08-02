@@ -39,11 +39,11 @@ def test_multi_features():
         async def get_owned_games(self):
             pass
 
-        async def import_games_achievements(self, game_ids) -> None:
+        async def get_unlocked_achievements(self, game_id, context):
             pass
 
-        async def start_game_times_import(self, game_ids) -> None:
+        async def get_game_time(self, game_id, context):
             pass
 
     plugin = PluginImpl(Platform.Generic, "0.1", None, None, None)
-    assert set(plugin.features) == {Feature.ImportAchievements, Feature.ImportOwnedGames}
+    assert set(plugin.features) == {Feature.ImportAchievements, Feature.ImportOwnedGames, Feature.ImportGameTime}
