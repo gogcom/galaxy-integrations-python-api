@@ -546,7 +546,7 @@ class Plugin:
         self.create_task(import_games_achievements(game_ids, context), "Games unlocked achievements import")
         self._achievements_import_in_progress = True
 
-    async def prepare_achievements_context(self, game_ids: List[str]) -> None:
+    async def prepare_achievements_context(self, game_ids: List[str]) -> Any:
         """Override this method to prepare context for get_unlocked_achievements.
 
         This allows for optimizations like batch requests to platform API.
@@ -693,7 +693,7 @@ class Plugin:
         self.create_task(import_game_times(game_ids, context), "Game times import")
         self._game_times_import_in_progress = True
 
-    async def prepare_game_times_context(self, game_ids: List[str]) -> None:
+    async def prepare_game_times_context(self, game_ids: List[str]) -> Any:
         """Override this method to prepare context for get_game_time.
         This allows for optimizations like batch requests to platform API.
         Default implementation returns None.
