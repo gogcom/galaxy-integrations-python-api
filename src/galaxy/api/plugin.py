@@ -270,7 +270,7 @@ class Plugin:
         """Notify the client to remove game from the list of owned games
         of the currently authenticated user.
 
-        :param game_id: game id of the game to remove from the list of owned games
+        :param game_id: the id of the game to remove from the list of owned games
 
         Example use case of remove_game:
 
@@ -300,7 +300,7 @@ class Plugin:
     def unlock_achievement(self, game_id: str, achievement: Achievement) -> None:
         """Notify the client to unlock an achievement for a specific game.
 
-        :param game_id: game_id of the game for which to unlock an achievement.
+        :param game_id: the of the game for which to unlock an achievement.
         :param achievement: achievement to unlock.
         """
         params = {
@@ -552,9 +552,11 @@ class Plugin:
 
     async def prepare_achievements_context(self, game_ids: List[str]) -> Any:
         """Override this method to prepare context for get_unlocked_achievements.
-
         This allows for optimizations like batch requests to platform API.
         Default implementation returns None.
+
+        :param game_ids: the ids of the games for which achievements are imported
+        :return: context
         """
         return None
 
@@ -563,9 +565,9 @@ class Plugin:
         for the game identified by the provided game_id.
         This method is called by import task initialized by GOG Galaxy Client.
 
-        :param game_id:
-        :param context: Value return from :meth:`prepare_achievements_context`
-        :return:
+        :param game_id: the id of the game for which the achievements are returned
+        :param context: the value returned from :meth:`prepare_achievements_context`
+        :return: list of Achievement objects
         """
         raise NotImplementedError()
 
@@ -601,7 +603,7 @@ class Plugin:
         identified by the provided game_id.
         This method is called by the GOG Galaxy Client.
 
-        :param str game_id: id of the game to launch
+        :param str game_id: the id of the game to launch
 
         Example of possible override of the method:
 
@@ -619,7 +621,7 @@ class Plugin:
         identified by the provided game_id.
         This method is called by the GOG Galaxy Client.
 
-        :param str game_id: id of the game to install
+        :param str game_id: the id of the game to install
 
         Example of possible override of the method:
 
@@ -637,7 +639,7 @@ class Plugin:
         identified by the provided game_id.
         This method is called by the GOG Galaxy Client.
 
-        :param str game_id: id of the game to uninstall
+        :param str game_id: the id of the game to uninstall
 
         Example of possible override of the method:
 
@@ -707,6 +709,9 @@ class Plugin:
         """Override this method to prepare context for get_game_time.
         This allows for optimizations like batch requests to platform API.
         Default implementation returns None.
+
+        :param game_ids: the ids of the games for which game time are imported
+        :return: context
         """
         return None
 
@@ -715,13 +720,13 @@ class Plugin:
         identified by the provided game_id.
         This method is called by import task initialized by GOG Galaxy Client.
 
-        :param game_id:
-        :param context: Value return from :meth:`prepare_game_times_context`
-        :return:
+        :param game_id: the id of the game for which the game time is returned
+        :param context: the value returned from :meth:`prepare_game_times_context`
+        :return: GameTime object
         """
         raise NotImplementedError()
 
-    def game_times_import_complete(self):
+    def game_times_import_complete(self) -> None:
         """Override this method to handle operations after game times import is finished
         (like updating cache).
         """
