@@ -1,6 +1,4 @@
-import asyncio
-import json
-from unittest.mock import MagicMock, call
+from unittest.mock import call
 
 import pytest
 from galaxy.api.types import GameTime
@@ -9,17 +7,10 @@ from galaxy.unittest.mock import async_return_value
 
 from tests import create_message, get_messages
 
-# TODO replace AsyncMocks with MagicMocks in conftest and use async_return_value
-@pytest.fixture()
-def reader():
-    stream = MagicMock(name="stream_reader")
-    stream.read = MagicMock()
-    yield stream
-
 
 @pytest.mark.asyncio
 async def test_get_game_time_success(plugin, read, write):
-    plugin.prepare_game_times_context.coro.return_value = "abc"
+    plugin.prepare_game_times_context.return_value = async_return_value("abc")
     request = {
         "jsonrpc": "2.0",
         "id": "3",
@@ -29,10 +20,10 @@ async def test_get_game_time_success(plugin, read, write):
         }
     }
     read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
-    plugin.get_game_time.coro.side_effect = [
-        GameTime("3", 60, 1549550504),
-        GameTime("5", 10, None),
-        GameTime("7", None, 1549550502),
+    plugin.get_game_time.side_effect = [
+        async_return_value(GameTime("3", 60, 1549550504)),
+        async_return_value(GameTime("5", 10, None)),
+        async_return_value(GameTime("7", None, 1549550502)),
     ]
     await plugin.run()
     plugin.get_game_time.assert_has_calls([
@@ -92,6 +83,7 @@ async def test_get_game_time_success(plugin, read, write):
     (KeyError, 0, "Unknown error")
 ])
 async def test_get_game_time_error(exception, code, message, plugin, read, write):
+    plugin.prepare_game_times_context.return_value = async_return_value(None)
     request = {
         "jsonrpc": "2.0",
         "id": "3",
@@ -101,7 +93,7 @@ async def test_get_game_time_error(exception, code, message, plugin, read, write
         }
     }
     read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
-    plugin.get_game_time.coro.side_effect = exception
+    plugin.get_game_time.side_effect = exception
     await plugin.run()
     plugin.get_game_time.assert_called()
 
@@ -132,7 +124,7 @@ async def test_get_game_time_error(exception, code, message, plugin, read, write
 
 @pytest.mark.asyncio
 async def test_prepare_get_game_time_context_error(plugin, read, write):
-    plugin.prepare_game_times_context.coro.side_effect = BackendError()
+    plugin.prepare_game_times_context.side_effect = BackendError()
     request = {
         "jsonrpc": "2.0",
         "id": "3",
@@ -158,6 +150,7 @@ async def test_prepare_get_game_time_context_error(plugin, read, write):
 
 @pytest.mark.asyncio
 async def test_import_in_progress(plugin, read, write):
+    plugin.prepare_game_times_context.return_value = async_return_value(None)
     requests = [
         {
             "jsonrpc": "2.0",
@@ -201,23 +194,21 @@ async def test_import_in_progress(plugin, read, write):
     ]
 
 
-def test_update_game(plugin, write):
+@pytest.mark.asyncio
+async def test_update_game(plugin, write):
     game_time = GameTime("3", 60, 1549550504)
+    plugin.update_game_time(game_time)
 
-    async def couritine():
-        plugin.update_game_time(game_time)
-
-    asyncio.run(couritine())
-    response = json.loads(write.call_args[0][0])
-
-    assert response == {
-        "jsonrpc": "2.0",
-        "method": "game_time_updated",
-        "params": {
-            "game_time": {
-                "game_id": "3",
-                "time_played": 60,
-                "last_played_time": 1549550504
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "method": "game_time_updated",
+            "params": {
+                "game_time": {
+                    "game_id": "3",
+                    "time_played": 60,
+                    "last_played_time": 1549550504
+                }
             }
         }
-    }
+    ]

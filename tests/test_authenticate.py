@@ -1,6 +1,3 @@
-import asyncio
-import json
-
 import pytest
 
 from galaxy.api.types import Authentication
@@ -8,29 +5,36 @@ from galaxy.api.errors import (
     UnknownError, InvalidCredentials, NetworkError, LoggedInElsewhere, ProtocolError,
     BackendNotAvailable, BackendTimeout, BackendError, TemporaryBlocked, Banned, AccessDenied
 )
+from galaxy.unittest.mock import async_return_value
 
-def test_success(plugin, read, write):
+from tests import create_message, get_messages
+
+
+@pytest.mark.asyncio
+async def test_success(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
         "method": "init_authentication"
     }
-
-    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
-    plugin.authenticate.coro.return_value = Authentication("132", "Zenek")
-    asyncio.run(plugin.run())
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"")]
+    plugin.authenticate.return_value = async_return_value(Authentication("132", "Zenek"))
+    await plugin.run()
     plugin.authenticate.assert_called_with()
-    response = json.loads(write.call_args[0][0])
 
-    assert response == {
-        "jsonrpc": "2.0",
-        "id": "3",
-        "result": {
-            "user_id": "132",
-            "user_name": "Zenek"
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "id": "3",
+            "result": {
+                "user_id": "132",
+                "user_name": "Zenek"
+            }
         }
-    }
+    ]
 
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("error,code,message", [
     pytest.param(UnknownError, 0, "Unknown error", id="unknown_error"),
     pytest.param(BackendNotAvailable, 2, "Backend not available", id="backend_not_available"),
@@ -44,29 +48,32 @@ def test_success(plugin, read, write):
     pytest.param(Banned, 105, "Banned", id="banned"),
     pytest.param(AccessDenied, 106, "Access denied", id="access_denied"),
 ])
-def test_failure(plugin, read, write, error, code, message):
+async def test_failure(plugin, read, write, error, code, message):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
         "method": "init_authentication"
     }
 
-    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
-    plugin.authenticate.coro.side_effect = error()
-    asyncio.run(plugin.run())
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"")]
+    plugin.authenticate.side_effect = error()
+    await plugin.run()
     plugin.authenticate.assert_called_with()
-    response = json.loads(write.call_args[0][0])
 
-    assert response == {
-        "jsonrpc": "2.0",
-        "id": "3",
-        "error": {
-            "code": code,
-            "message": message
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "id": "3",
+            "error": {
+                "code": code,
+                "message": message
+            }
         }
-    }
+    ]
 
-def test_stored_credentials(plugin, read, write):
+
+@pytest.mark.asyncio
+async def test_stored_credentials(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
@@ -77,39 +84,37 @@ def test_stored_credentials(plugin, read, write):
             }
         }
     }
-    read.side_effect = [json.dumps(request).encode() + b"\n", b""]
-    plugin.authenticate.coro.return_value = Authentication("132", "Zenek")
-    asyncio.run(plugin.run())
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"")]
+    plugin.authenticate.return_value = async_return_value(Authentication("132", "Zenek"))
+    await plugin.run()
     plugin.authenticate.assert_called_with(stored_credentials={"token": "ABC"})
     write.assert_called()
 
-def test_store_credentials(plugin, write):
+
+@pytest.mark.asyncio
+async def test_store_credentials(plugin, write):
     credentials = {
         "token": "ABC"
     }
+    plugin.store_credentials(credentials)
 
-    async def couritine():
-        plugin.store_credentials(credentials)
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "method": "store_credentials",
+            "params": credentials
+        }
+    ]
 
-    asyncio.run(couritine())
-    response = json.loads(write.call_args[0][0])
 
-    assert response == {
-        "jsonrpc": "2.0",
-        "method": "store_credentials",
-        "params": credentials
-    }
+@pytest.mark.asyncio
+async def test_lost_authentication(plugin, write):
+    plugin.lost_authentication()
 
-def test_lost_authentication(plugin, write):
-
-    async def couritine():
-        plugin.lost_authentication()
-
-    asyncio.run(couritine())
-    response = json.loads(write.call_args[0][0])
-
-    assert response == {
-        "jsonrpc": "2.0",
-        "method": "authentication_lost",
-        "params": None
-    }
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "method": "authentication_lost",
+            "params": None
+        }
+    ]

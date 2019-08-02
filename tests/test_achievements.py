@@ -1,5 +1,4 @@
 import json
-from unittest.mock import MagicMock
 
 import pytest
 from pytest import raises
@@ -21,17 +20,9 @@ def test_initialization_no_id_nor_name():
         Achievement(unlock_time=1234567890)
 
 
-# TODO replace AsyncMocks with MagicMocks in conftest and use async_return_value
-@pytest.fixture()
-def reader():
-    stream = MagicMock(name="stream_reader")
-    stream.read = MagicMock()
-    yield stream
-
-
 @pytest.mark.asyncio
 async def test_get_unlocked_achievements_success(plugin, read, write):
-    plugin.prepare_achievements_context.coro.return_value = 5
+    plugin.prepare_achievements_context.return_value = async_return_value(5)
     request = {
         "jsonrpc": "2.0",
         "id": "3",
@@ -41,11 +32,11 @@ async def test_get_unlocked_achievements_success(plugin, read, write):
         }
     }
     read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
-    plugin.get_unlocked_achievements.coro.return_value = [
+    plugin.get_unlocked_achievements.return_value = async_return_value([
         Achievement(achievement_id="lvl10", unlock_time=1548421241),
         Achievement(achievement_name="Got level 20", unlock_time=1548422395),
         Achievement(achievement_id="lvl30", achievement_name="Got level 30", unlock_time=1548495633)
-    ]
+    ])
     await plugin.run()
     plugin.prepare_achievements_context.assert_called_with(["14"])
     plugin.get_unlocked_achievements.assert_called_with("14", 5)
@@ -92,6 +83,7 @@ async def test_get_unlocked_achievements_success(plugin, read, write):
     (KeyError, 0, "Unknown error")
 ])
 async def test_get_unlocked_achievements_error(exception, code, message, plugin, read, write):
+    plugin.prepare_achievements_context.return_value = async_return_value(None)
     request = {
         "jsonrpc": "2.0",
         "id": "3",
@@ -102,7 +94,7 @@ async def test_get_unlocked_achievements_error(exception, code, message, plugin,
     }
 
     read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
-    plugin.get_unlocked_achievements.coro.side_effect = exception
+    plugin.get_unlocked_achievements.side_effect = exception
     await plugin.run()
     plugin.get_unlocked_achievements.assert_called()
 
@@ -132,7 +124,7 @@ async def test_get_unlocked_achievements_error(exception, code, message, plugin,
 
 @pytest.mark.asyncio
 async def test_prepare_get_unlocked_achievements_context_error(plugin, read, write):
-    plugin.prepare_achievements_context.coro.side_effect = BackendError()
+    plugin.prepare_achievements_context.side_effect = BackendError()
     request = {
         "jsonrpc": "2.0",
         "id": "3",
@@ -158,6 +150,7 @@ async def test_prepare_get_unlocked_achievements_context_error(plugin, read, wri
 
 @pytest.mark.asyncio
 async def test_import_in_progress(plugin, read, write):
+    plugin.prepare_achievements_context.return_value = async_return_value(None)
     requests = [
         {
             "jsonrpc": "2.0",

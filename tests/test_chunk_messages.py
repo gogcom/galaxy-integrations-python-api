@@ -1,7 +1,12 @@
-import asyncio
 import json
 
-def test_chunked_messages(plugin, read):
+import pytest
+
+from galaxy.unittest.mock import async_return_value
+
+
+@pytest.mark.asyncio
+async def test_chunked_messages(plugin, read):
     request = {
         "jsonrpc": "2.0",
         "method": "install_game",
@@ -11,11 +16,13 @@ def test_chunked_messages(plugin, read):
     }
 
     message = json.dumps(request).encode() + b"\n"
-    read.side_effect = [message[:5], message[5:], b""]
-    asyncio.run(plugin.run())
+    read.side_effect = [async_return_value(message[:5]), async_return_value(message[5:]), async_return_value(b"")]
+    await plugin.run()
     plugin.install_game.assert_called_with(game_id="3")
 
-def test_joined_messages(plugin, read):
+
+@pytest.mark.asyncio
+async def test_joined_messages(plugin, read):
     requests = [
         {
             "jsonrpc": "2.0",
@@ -34,12 +41,14 @@ def test_joined_messages(plugin, read):
     ]
     data = b"".join([json.dumps(request).encode() + b"\n" for request in requests])
 
-    read.side_effect = [data, b""]
-    asyncio.run(plugin.run())
+    read.side_effect = [async_return_value(data), async_return_value(b"")]
+    await plugin.run()
     plugin.install_game.assert_called_with(game_id="3")
     plugin.launch_game.assert_called_with(game_id="3")
 
-def test_not_finished(plugin, read):
+
+@pytest.mark.asyncio
+async def test_not_finished(plugin, read):
     request = {
         "jsonrpc": "2.0",
         "method": "install_game",
@@ -49,6 +58,6 @@ def test_not_finished(plugin, read):
     }
 
     message = json.dumps(request).encode() # no new line
-    read.side_effect = [message, b""]
-    asyncio.run(plugin.run())
+    read.side_effect = [async_return_value(message), async_return_value(b"")]
+    await plugin.run()
     plugin.install_game.assert_not_called()

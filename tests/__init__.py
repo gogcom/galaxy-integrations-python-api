@@ -16,3 +16,4 @@ def get_messages(write_mock):
             message = json.loads(line)
             messages.append(message)
     return messages
+
