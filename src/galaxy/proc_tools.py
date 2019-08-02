@@ -1,10 +1,7 @@
-import platform
+import sys
 from dataclasses import dataclass
-from typing import Iterable, NewType, Optional, Set
+from typing import Iterable, NewType, Optional, List, cast
 
-
-def is_windows():
-    return platform.system() == "Windows"
 
 
 ProcessId = NewType("ProcessId", int)
@@ -16,7 +13,7 @@ class ProcessInfo:
     binary_path: Optional[str]
 
 
-if is_windows():
+if sys.platform == "win32":
     from ctypes import byref, sizeof, windll, create_unicode_buffer, FormatError, WinError
     from ctypes.wintypes import DWORD
 
@@ -25,14 +22,14 @@ if is_windows():
         _PROC_ID_T = DWORD
         list_size = 4096
 
-        def try_get_pids(list_size: int) -> Set[ProcessId]:
+        def try_get_pids(list_size: int) -> List[ProcessId]:
             result_size = DWORD()
             proc_id_list = (_PROC_ID_T * list_size)()
 
             if not windll.psapi.EnumProcesses(byref(proc_id_list), sizeof(proc_id_list), byref(result_size)):
-                raise WinError(descr="Failed to get process ID list: %s" % FormatError())
+                raise WinError(descr="Failed to get process ID list: %s" % FormatError())  # type: ignore
 
-            return proc_id_list[:int(result_size.value / sizeof(_PROC_ID_T()))]
+            return cast(List[ProcessId], proc_id_list[:int(result_size.value / sizeof(_PROC_ID_T()))])
 
         while True:
             proc_ids = try_get_pids(list_size)
@@ -59,7 +56,7 @@ if is_windows():
                 exe_path_buffer = create_unicode_buffer(_MAX_PATH)
                 exe_path_len = DWORD(len(exe_path_buffer))
 
-                return exe_path_buffer[:exe_path_len.value] if windll.kernel32.QueryFullProcessImageNameW(
+                return cast(str, exe_path_buffer[:exe_path_len.value]) if windll.kernel32.QueryFullProcessImageNameW(
                     h_process, _WIN32_PATH_FORMAT, exe_path_buffer, byref(exe_path_len)
                 ) else None
 
@@ -86,6 +83,6 @@ else:
             return process_info
 
 
-def process_iter() -> Iterable[ProcessInfo]:
+def process_iter() -> Iterable[Optional[ProcessInfo]]:
     for pid in pids():
         yield get_process_info(pid)

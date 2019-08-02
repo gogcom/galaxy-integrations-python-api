@@ -1,6 +1,6 @@
 from galaxy.api.jsonrpc import ApplicationError, UnknownError
 
-UnknownError = UnknownError
+assert UnknownError
 
 class AuthenticationRequired(ApplicationError):
     def __init__(self, data=None):

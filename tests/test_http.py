@@ -3,6 +3,8 @@ from http import HTTPStatus
 
 import aiohttp
 import pytest
+from multidict import CIMultiDict, CIMultiDictProxy
+from yarl import URL
 
 from galaxy.api.errors import (
     AccessDenied, AuthenticationRequired, BackendTimeout, BackendNotAvailable, BackendError, NetworkError,
@@ -10,7 +12,7 @@ from galaxy.api.errors import (
 )
 from galaxy.http import handle_exception
 
-request_info = aiohttp.RequestInfo("http://o.pl", "GET", {})
+request_info = aiohttp.RequestInfo(URL("http://o.pl"), "GET", CIMultiDictProxy(CIMultiDict()))
 
 @pytest.mark.parametrize(
     "aiohttp_exception,expected_exception_type",
@@ -18,15 +20,15 @@ request_info = aiohttp.RequestInfo("http://o.pl", "GET", {})
         (asyncio.TimeoutError(), BackendTimeout),
         (aiohttp.ServerDisconnectedError(), BackendNotAvailable),
         (aiohttp.ClientConnectionError(), NetworkError),
-        (aiohttp.ContentTypeError(request_info, []), UnknownBackendResponse),
-        (aiohttp.ClientResponseError(request_info, [], status=HTTPStatus.UNAUTHORIZED), AuthenticationRequired),
-        (aiohttp.ClientResponseError(request_info, [], status=HTTPStatus.FORBIDDEN), AccessDenied),
-        (aiohttp.ClientResponseError(request_info, [], status=HTTPStatus.SERVICE_UNAVAILABLE), BackendNotAvailable),
-        (aiohttp.ClientResponseError(request_info, [], status=HTTPStatus.TOO_MANY_REQUESTS), TooManyRequests),
-        (aiohttp.ClientResponseError(request_info, [], status=HTTPStatus.INTERNAL_SERVER_ERROR), BackendError),
-        (aiohttp.ClientResponseError(request_info, [], status=HTTPStatus.NOT_IMPLEMENTED), BackendError),
-        (aiohttp.ClientResponseError(request_info, [], status=HTTPStatus.BAD_REQUEST), UnknownError),
-        (aiohttp.ClientResponseError(request_info, [], status=HTTPStatus.NOT_FOUND), UnknownError),
+        (aiohttp.ContentTypeError(request_info, ()), UnknownBackendResponse),
+        (aiohttp.ClientResponseError(request_info, (), status=HTTPStatus.UNAUTHORIZED), AuthenticationRequired),
+        (aiohttp.ClientResponseError(request_info, (), status=HTTPStatus.FORBIDDEN), AccessDenied),
+        (aiohttp.ClientResponseError(request_info, (), status=HTTPStatus.SERVICE_UNAVAILABLE), BackendNotAvailable),
+        (aiohttp.ClientResponseError(request_info, (), status=HTTPStatus.TOO_MANY_REQUESTS), TooManyRequests),
+        (aiohttp.ClientResponseError(request_info, (), status=HTTPStatus.INTERNAL_SERVER_ERROR), BackendError),
+        (aiohttp.ClientResponseError(request_info, (), status=HTTPStatus.NOT_IMPLEMENTED), BackendError),
+        (aiohttp.ClientResponseError(request_info, (), status=HTTPStatus.BAD_REQUEST), UnknownError),
+        (aiohttp.ClientResponseError(request_info, (), status=HTTPStatus.NOT_FOUND), UnknownError),
         (aiohttp.ClientError(), UnknownError)
     ]
 )
