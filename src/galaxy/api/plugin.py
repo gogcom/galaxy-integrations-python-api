@@ -208,7 +208,10 @@ class Plugin:
 
     def _initialize_cache(self, data: Dict):
         self._persistent_cache = data
-        self.handshake_complete()
+        try:
+            self.handshake_complete()
+        except Exception:
+            logging.exception("Unhandled exception during `handshake_complete` step")
         self._pass_control_task = asyncio.create_task(self._pass_control())
 
     @staticmethod
