@@ -545,6 +545,7 @@ class Plugin:
             finally:
                 self._achievements_import_finished()
                 self._achievements_import_in_progress = False
+                self.achievements_import_complete()
 
         self.create_task(import_games_achievements(game_ids, context), "Games unlocked achievements import")
         self._achievements_import_in_progress = True
@@ -567,6 +568,11 @@ class Plugin:
         :return:
         """
         raise NotImplementedError()
+
+    def achievements_import_complete(self):
+        """Override this method to handle operations after achievements import is finished
+        (like updating cache).
+        """
 
     async def get_local_games(self) -> List[LocalGame]:
         """Override this method to return the list of
@@ -692,6 +698,7 @@ class Plugin:
             finally:
                 self._game_times_import_finished()
                 self._game_times_import_in_progress = False
+                self.game_times_import_complete()
 
         self.create_task(import_game_times(game_ids, context), "Game times import")
         self._game_times_import_in_progress = True
@@ -713,6 +720,11 @@ class Plugin:
         :return:
         """
         raise NotImplementedError()
+
+    def game_times_import_complete(self):
+        """Override this method to handle operations after game times import is finished
+        (like updating cache).
+        """
 
 
 def create_and_run_plugin(plugin_class, argv):

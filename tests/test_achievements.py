@@ -40,6 +40,7 @@ async def test_get_unlocked_achievements_success(plugin, read, write):
     await plugin.run()
     plugin.prepare_achievements_context.assert_called_with(["14"])
     plugin.get_unlocked_achievements.assert_called_with("14", 5)
+    plugin.achievements_import_complete.asert_called_with()
 
     assert get_messages(write) == [
         {
@@ -97,6 +98,7 @@ async def test_get_unlocked_achievements_error(exception, code, message, plugin,
     plugin.get_unlocked_achievements.side_effect = exception
     await plugin.run()
     plugin.get_unlocked_achievements.assert_called()
+    plugin.achievements_import_complete.asert_called_with()
 
     assert get_messages(write) == [
         {

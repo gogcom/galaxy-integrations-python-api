@@ -37,6 +37,7 @@ def plugin(reader, writer):
         "get_owned_games",
         "prepare_achievements_context",
         "get_unlocked_achievements",
+        "achievements_import_complete",
         "get_local_games",
         "launch_game",
         "install_game",
@@ -44,6 +45,7 @@ def plugin(reader, writer):
         "get_friends",
         "get_game_time",
         "prepare_game_times_context",
+        "game_times_import_complete",
         "shutdown_platform_client",
         "shutdown",
         "tick"

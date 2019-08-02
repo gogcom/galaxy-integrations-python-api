@@ -31,6 +31,7 @@ async def test_get_game_time_success(plugin, read, write):
         call("5", "abc"),
         call("7", "abc"),
     ])
+    plugin.game_times_import_complete.assert_called_once_with()
 
     assert get_messages(write) == [
         {
@@ -96,6 +97,7 @@ async def test_get_game_time_error(exception, code, message, plugin, read, write
     plugin.get_game_time.side_effect = exception
     await plugin.run()
     plugin.get_game_time.assert_called()
+    plugin.game_times_import_complete.assert_called_once_with()
 
     assert get_messages(write) == [
         {
