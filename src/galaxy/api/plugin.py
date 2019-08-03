@@ -300,7 +300,7 @@ class Plugin:
     def unlock_achievement(self, game_id: str, achievement: Achievement) -> None:
         """Notify the client to unlock an achievement for a specific game.
 
-        :param game_id: the of the game for which to unlock an achievement.
+        :param game_id: the id of the game for which to unlock an achievement.
         :param achievement: achievement to unlock.
         """
         params = {
