@@ -40,6 +40,7 @@ def plugin(reader, writer):
         "achievements_import_complete",
         "get_local_games",
         "launch_game",
+        "launch_platform_client",
         "install_game",
         "uninstall_game",
         "get_friends",

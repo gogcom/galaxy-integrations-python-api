@@ -13,7 +13,8 @@ def test_base_class():
         Feature.ImportAchievements,
         Feature.ImportGameTime,
         Feature.ImportFriends,
-        Feature.ShutdownPlatformClient
+        Feature.ShutdownPlatformClient,
+        Feature.LaunchPlatformClient
     }
 
 

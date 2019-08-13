@@ -99,6 +99,7 @@ class Feature(Enum):
     VerifyGame = "VerifyGame"
     ImportFriends = "ImportFriends"
     ShutdownPlatformClient = "ShutdownPlatformClient"
+    LaunchPlatformClient = "LaunchPlatformClient"
 
 
 class LicenseType(Enum):
