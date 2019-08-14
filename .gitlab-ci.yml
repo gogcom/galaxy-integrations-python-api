@@ -18,7 +18,7 @@ deploy_package:
     TWINE_USERNAME: $PYPI_USERNAME
     TWINE_PASSWORD: $PYPI_PASSWORD
   script:
-    - pip install twine
+    - pip install twine wheel
     - rm -rf dist
     - export VERSION=$(python setup.py --version)
     - python setup.py sdist --formats=gztar bdist_wheel
