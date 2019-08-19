@@ -80,3 +80,4 @@ Platform ID list for GOG Galaxy 2.0 Integrations
 | nds	| Nintendo DS |
 | 3ds	| Nintendo 3DS |
 | pathofexile | Path of Exile |
+| geforcenow	| NVIDIA GeForce NOW |

@@ -81,6 +81,7 @@ class Platform(Enum):
     NintendoDs = "nds"
     Nintendo3Ds = "3ds"
     PathOfExile = "pathofexile"
+    GeForceNow = "geforcenow"
 
 class Feature(Enum):
     """Possible features that can be implemented by an integration.
