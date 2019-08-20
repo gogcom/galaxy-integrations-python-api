@@ -661,7 +661,7 @@ class Plugin:
         raise NotImplementedError()
 
     async def launch_platform_client(self) -> None:
-        """Override this method to launch platform client.
+        """Override this method to launch platform client. Preferably minimized to tray.
         This method is called by the GOG Galaxy Client."""
         raise NotImplementedError()
 
