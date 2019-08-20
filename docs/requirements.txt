@@ -1,4 +1,5 @@
 Sphinx==2.0.1
 sphinx-rtd-theme==0.4.3
 sphinx-autodoc-typehints==1.6.0
+sphinxcontrib-asyncio==0.2.0
 m2r==0.2.1

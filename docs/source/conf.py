@@ -32,6 +32,7 @@ release = _version
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinxcontrib.asyncio',
     'sphinx_autodoc_typehints',
     'm2r'  # mdinclude directive for makrdown files
 ]
