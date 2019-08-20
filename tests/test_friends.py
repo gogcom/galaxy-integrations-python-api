@@ -1,90 +1,94 @@
-import asyncio
-import json
-
 from galaxy.api.types import FriendInfo
 from galaxy.api.errors import UnknownError
+from galaxy.unittest.mock import async_return_value
+
+import pytest
+
+from tests import create_message, get_messages
 
 
-def test_get_friends_success(plugin, readline, write):
+@pytest.mark.asyncio
+async def test_get_friends_success(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
         "method": "import_friends"
     }
 
-    readline.side_effect = [json.dumps(request), ""]
-    plugin.get_friends.coro.return_value = [
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"")]
+    plugin.get_friends.return_value = async_return_value([
         FriendInfo("3", "Jan"),
         FriendInfo("5", "Ola")
-    ]
-    asyncio.run(plugin.run())
+    ])
+    await plugin.run()
     plugin.get_friends.assert_called_with()
-    response = json.loads(write.call_args[0][0])
 
-    assert response == {
-        "jsonrpc": "2.0",
-        "id": "3",
-        "result": {
-            "friend_info_list": [
-                {"user_id": "3", "user_name": "Jan"},
-                {"user_id": "5", "user_name": "Ola"}
-            ]
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "id": "3",
+            "result": {
+                "friend_info_list": [
+                    {"user_id": "3", "user_name": "Jan"},
+                    {"user_id": "5", "user_name": "Ola"}
+                ]
+            }
         }
-    }
+    ]
 
 
-def test_get_friends_failure(plugin, readline, write):
+@pytest.mark.asyncio
+async def test_get_friends_failure(plugin, read, write):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
         "method": "import_friends"
     }
 
-    readline.side_effect = [json.dumps(request), ""]
-    plugin.get_friends.coro.side_effect = UnknownError()
-    asyncio.run(plugin.run())
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"")]
+    plugin.get_friends.side_effect = UnknownError()
+    await plugin.run()
     plugin.get_friends.assert_called_with()
-    response = json.loads(write.call_args[0][0])
 
-    assert response == {
-        "jsonrpc": "2.0",
-        "id": "3",
-        "error": {
-            "code": 0,
-            "message": "Unknown error",
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "id": "3",
+            "error": {
+                "code": 0,
+                "message": "Unknown error",
+            }
         }
-    }
+    ]
 
 
-def test_add_friend(plugin, write):
+@pytest.mark.asyncio
+async def test_add_friend(plugin, write):
     friend = FriendInfo("7", "Kuba")
 
-    async def couritine():
-        plugin.add_friend(friend)
+    plugin.add_friend(friend)
 
-    asyncio.run(couritine())
-    response = json.loads(write.call_args[0][0])
-
-    assert response == {
-        "jsonrpc": "2.0",
-        "method": "friend_added",
-        "params": {
-            "friend_info": {"user_id": "7", "user_name": "Kuba"}
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "method": "friend_added",
+            "params": {
+                "friend_info": {"user_id": "7", "user_name": "Kuba"}
+            }
         }
-    }
+    ]
 
 
-def test_remove_friend(plugin, write):
-    async def couritine():
-        plugin.remove_friend("5")
+@pytest.mark.asyncio
+async def test_remove_friend(plugin, write):
+    plugin.remove_friend("5")
 
-    asyncio.run(couritine())
-    response = json.loads(write.call_args[0][0])
-
-    assert response == {
-        "jsonrpc": "2.0",
-        "method": "friend_removed",
-        "params": {
-            "user_id": "5"
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "method": "friend_removed",
+            "params": {
+                "user_id": "5"
+            }
         }
-    }
+    ]

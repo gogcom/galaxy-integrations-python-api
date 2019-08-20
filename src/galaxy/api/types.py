@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Dict, Optional
 
-from galaxy.api.consts import LicenseType, LocalGameState, PresenceState
+from galaxy.api.consts import LicenseType, LocalGameState
 
 @dataclass
 class Authentication():
@@ -61,7 +61,6 @@ class NextStep():
     :param auth_params: configuration options: {"window_title": :class:`str`, "window_width": :class:`str`, "window_height": :class:`int`, "start_uri": :class:`int`, "end_uri_regex": :class:`str`}
     :param cookies: browser initial set of cookies
     :param js: a map of the url regex patterns into the list of *js* scripts that should be executed on every document at given step of internal browser authentication.
-
     """
     next_step: str
     auth_params: Dict[str, str]
@@ -131,34 +130,6 @@ class LocalGame():
     local_game_state: LocalGameState
 
 @dataclass
-class Presence():
-    """Information about a presence of a user.
-
-    :param presence_state: the state in which the user's presence is
-    :param game_id: id of the game which the user is currently playing
-    :param presence_status: optional attached string with the detailed description of the user's presence
-    """
-    presence_state: PresenceState
-    game_id: Optional[str] = None
-    presence_status: Optional[str] = None
-
-@dataclass
-class UserInfo():
-    """Detailed information about a user.
-
-    :param user_id: of the user
-    :param is_friend: whether the user is a friend of the currently authenticated user
-    :param user_name: of the user
-    :param avatar_url: to the avatar of the user
-    :param presence: about the users presence
-    """
-    user_id: str
-    is_friend: bool
-    user_name: str
-    avatar_url: str
-    presence: Presence
-
-@dataclass
 class FriendInfo():
     """Information about a friend of the currently authenticated user.
 
@@ -167,32 +138,6 @@ class FriendInfo():
     """
     user_id: str
     user_name: str
-
-@dataclass
-class Room():
-    """WIP, Chatroom.
-
-    :param room_id: id of the room
-    :param unread_message_count: number of unread messages in the room
-    :param last_message_id: id of the last message in the room
-    """
-    room_id: str
-    unread_message_count: int
-    last_message_id: str
-
-@dataclass
-class Message():
-    """WIP, A chatroom message.
-
-    :param message_id: id of the message
-    :param sender_id: id of the sender of the message
-    :param sent_time: time at which the message was sent
-    :param message_text: text attached to the message
-    """
-    message_id: str
-    sender_id: str
-    sent_time: int
-    message_text: str
 
 @dataclass
 class GameTime():
@@ -204,5 +149,5 @@ class GameTime():
     :param last_time_played: last time the game was played (**unix timestamp**)
     """
     game_id: str
-    time_played: int
-    last_played_time: int
+    time_played: Optional[int]
+    last_played_time: Optional[int]

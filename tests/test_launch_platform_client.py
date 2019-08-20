@@ -8,12 +8,10 @@ from tests import create_message
 async def test_success(plugin, read):
     request = {
         "jsonrpc": "2.0",
-        "method": "uninstall_game",
-        "params": {
-            "game_id": "3"
-        }
+        "method": "launch_platform_client"
     }
+
     read.side_effect = [async_return_value(create_message(request)), async_return_value(b"")]
-    plugin.get_owned_games.return_value = None
+    plugin.launch_platform_client.return_value = async_return_value(None)
     await plugin.run()
-    plugin.uninstall_game.assert_called_with(game_id="3")
+    plugin.launch_platform_client.assert_called_with()
