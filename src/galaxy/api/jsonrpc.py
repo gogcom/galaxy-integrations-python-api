@@ -6,6 +6,7 @@ import inspect
 import json
 
 from galaxy.reader import StreamLineReader
+from galaxy.task_manager import TaskManager
 
 class JsonRpcError(Exception):
     def __init__(self, code, message, data=None):
@@ -52,7 +53,8 @@ class UnknownError(ApplicationError):
         super().__init__(0, "Unknown error", data)
 
 Request = namedtuple("Request", ["method", "params", "id"], defaults=[{}, None])
-Method = namedtuple("Method", ["callback", "signature", "internal", "sensitive_params"])
+Method = namedtuple("Method", ["callback", "signature", "immediate", "sensitive_params"])
+
 
 def anonymise_sensitive_params(params, sensitive_params):
     anomized_data = "****"
@@ -74,9 +76,9 @@ class Server():
         self._encoder = encoder
         self._methods = {}
         self._notifications = {}
-        self._eof_listeners = []
+        self._task_manager = TaskManager("jsonrpc server")
 
-    def register_method(self, name, callback, internal, sensitive_params=False):
+    def register_method(self, name, callback, immediate, sensitive_params=False):
         """
         Register method
 
@@ -86,9 +88,9 @@ class Server():
         :param sensitive_params: list of parameters that are anonymized before logging; \
             if False - no params are considered sensitive, if True - all params are considered sensitive
         """
-        self._methods[name] = Method(callback, inspect.signature(callback), internal, sensitive_params)
+        self._methods[name] = Method(callback, inspect.signature(callback), immediate, sensitive_params)
 
-    def register_notification(self, name, callback, internal, sensitive_params=False):
+    def register_notification(self, name, callback, immediate, sensitive_params=False):
         """
         Register notification
 
@@ -98,10 +100,7 @@ class Server():
         :param sensitive_params: list of parameters that are anonymized before logging; \
             if False - no params are considered sensitive, if True - all params are considered sensitive
         """
-        self._notifications[name] = Method(callback, inspect.signature(callback), internal, sensitive_params)
-
-    def register_eof(self, callback):
-        self._eof_listeners.append(callback)
+        self._notifications[name] = Method(callback, inspect.signature(callback), immediate, sensitive_params)
 
     async def run(self):
         while self._active:
@@ -118,14 +117,16 @@ class Server():
             self._handle_input(data)
             await asyncio.sleep(0) # To not starve task queue
 
-    def stop(self):
+    def close(self):
+        logging.info("Closing JSON-RPC server - not more messages will be read")
         self._active = False
+
+    async def wait_closed(self):
+        await self._task_manager.wait()
 
     def _eof(self):
         logging.info("Received EOF")
-        self.stop()
-        for listener in self._eof_listeners:
-            listener()
+        self.close()
 
     def _handle_input(self, data):
         try:
@@ -145,7 +146,7 @@ class Server():
             logging.error("Received unknown notification: %s", request.method)
             return
 
-        callback, signature, internal, sensitive_params = method
+        callback, signature, immediate, sensitive_params = method
         self._log_request(request, sensitive_params)
 
         try:
@@ -153,12 +154,11 @@ class Server():
         except TypeError:
             self._send_error(request.id, InvalidParams())
 
-        if internal:
-            # internal requests are handled immediately
+        if immediate:
             callback(*bound_args.args, **bound_args.kwargs)
         else:
             try:
-                asyncio.create_task(callback(*bound_args.args, **bound_args.kwargs))
+                self._task_manager.create_task(callback(*bound_args.args, **bound_args.kwargs), request.method)
             except Exception:
                 logging.exception("Unexpected exception raised in notification handler")
 
@@ -169,7 +169,7 @@ class Server():
             self._send_error(request.id, MethodNotFound())
             return
 
-        callback, signature, internal, sensitive_params = method
+        callback, signature, immediate, sensitive_params = method
         self._log_request(request, sensitive_params)
 
         try:
@@ -177,8 +177,7 @@ class Server():
         except TypeError:
             self._send_error(request.id, InvalidParams())
 
-        if internal:
-            # internal requests are handled immediately
+        if immediate:
             response = callback(*bound_args.args, **bound_args.kwargs)
             self._send_response(request.id, response)
         else:
@@ -190,11 +189,13 @@ class Server():
                     self._send_error(request.id, MethodNotFound())
                 except JsonRpcError as error:
                     self._send_error(request.id, error)
+                except asyncio.CancelledError:
+                    self._send_error(request.id, Aborted())
                 except Exception as e:  #pylint: disable=broad-except
                     logging.exception("Unexpected exception raised in plugin handler")
                     self._send_error(request.id, UnknownError(str(e)))
 
-            asyncio.create_task(handle())
+            self._task_manager.create_task(handle(), request.method)
 
     @staticmethod
     def _parse_request(data):
@@ -215,7 +216,7 @@ class Server():
             logging.debug("Sending data: %s", line)
             data = (line + "\n").encode("utf-8")
             self._writer.write(data)
-            asyncio.create_task(self._writer.drain())
+            self._task_manager.create_task(self._writer.drain(), "drain")
         except TypeError as error:
             logging.error(str(error))
 
@@ -255,6 +256,7 @@ class NotificationClient():
         self._writer = writer
         self._encoder = encoder
         self._methods = {}
+        self._task_manager = TaskManager("notification client")
 
     def notify(self, method, params, sensitive_params=False):
         """
@@ -273,13 +275,16 @@ class NotificationClient():
         self._log(method, params, sensitive_params)
         self._send(notification)
 
+    async def close(self):
+        await self._task_manager.wait()
+
     def _send(self, data):
         try:
             line = self._encoder.encode(data)
             data = (line + "\n").encode("utf-8")
             logging.debug("Sending %d byte of data", len(data))
             self._writer.write(data)
-            asyncio.create_task(self._writer.drain())
+            self._task_manager.create_task(self._writer.drain(), "drain")
         except TypeError as error:
             logging.error("Failed to parse outgoing message: %s", str(error))
 

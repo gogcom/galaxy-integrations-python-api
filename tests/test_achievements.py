@@ -136,6 +136,7 @@ async def test_prepare_get_unlocked_achievements_context_error(plugin, read, wri
         }
     }
     read.side_effect = [async_return_value(create_message(request)), async_return_value(b"")]
+
     await plugin.run()
 
     assert get_messages(write) == [
@@ -153,6 +154,7 @@ async def test_prepare_get_unlocked_achievements_context_error(plugin, read, wri
 @pytest.mark.asyncio
 async def test_import_in_progress(plugin, read, write):
     plugin.prepare_achievements_context.return_value = async_return_value(None)
+    plugin.get_unlocked_achievements.return_value = async_return_value([])
     requests = [
         {
             "jsonrpc": "2.0",
@@ -179,21 +181,20 @@ async def test_import_in_progress(plugin, read, write):
 
     await plugin.run()
 
-    assert get_messages(write) == [
-        {
-            "jsonrpc": "2.0",
-            "id": "3",
-            "result": None
-        },
-        {
-            "jsonrpc": "2.0",
-            "id": "4",
-            "error": {
-                "code": 600,
-                "message": "Import already in progress"
-            }
+    messages = get_messages(write)
+    assert {
+        "jsonrpc": "2.0",
+        "id": "3",
+        "result": None
+    } in messages
+    assert {
+        "jsonrpc": "2.0",
+        "id": "4",
+        "error": {
+            "code": 600,
+            "message": "Import already in progress"
         }
-    ]
+    } in messages
 
 
 @pytest.mark.asyncio

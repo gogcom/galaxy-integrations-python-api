@@ -6,6 +6,7 @@ import pytest
 
 from galaxy.api.plugin import Plugin
 from galaxy.api.consts import Platform
+from galaxy.unittest.mock import async_return_value
 
 @pytest.fixture()
 def reader():
@@ -16,8 +17,7 @@ def reader():
 @pytest.fixture()
 async def writer():
     stream = MagicMock(name="stream_writer")
-    stream.write = MagicMock()
-    stream.drain = MagicMock()
+    stream.drain.side_effect = lambda: async_return_value(None)
     yield stream
 
 @pytest.fixture()
@@ -29,7 +29,7 @@ def write(writer):
     yield writer.write
 
 @pytest.fixture()
-def plugin(reader, writer):
+async def plugin(reader, writer):
     """Return plugin instance with all feature methods mocked"""
     methods = (
         "handshake_complete",
@@ -55,7 +55,10 @@ def plugin(reader, writer):
     with ExitStack() as stack:
         for method in methods:
             stack.enter_context(patch.object(Plugin, method))
-        yield Plugin(Platform.Generic, "0.1", reader, writer, "token")
+
+        async with Plugin(Platform.Generic, "0.1", reader, writer, "token") as plugin:
+            plugin.shutdown.return_value = async_return_value(None)
+            yield plugin
 
 
 @pytest.fixture(autouse=True)

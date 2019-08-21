@@ -179,21 +179,20 @@ async def test_import_in_progress(plugin, read, write):
 
     await plugin.run()
 
-    assert get_messages(write) == [
-        {
-            "jsonrpc": "2.0",
-            "id": "3",
-            "result": None
-        },
-        {
-            "jsonrpc": "2.0",
-            "id": "4",
-            "error": {
-                "code": 600,
-                "message": "Import already in progress"
-            }
+    messages = get_messages(write)
+    assert {
+        "jsonrpc": "2.0",
+        "id": "3",
+        "result": None
+    } in messages
+    assert {
+        "jsonrpc": "2.0",
+        "id": "4",
+        "error": {
+            "code": 600,
+            "message": "Import already in progress"
         }
-    ]
+    } in messages
 
 
 @pytest.mark.asyncio

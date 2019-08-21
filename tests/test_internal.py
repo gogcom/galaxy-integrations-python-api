@@ -46,6 +46,7 @@ async def test_shutdown(plugin, read, write):
     }
     read.side_effect = [async_return_value(create_message(request))]
     await plugin.run()
+    await plugin.wait_closed()
     plugin.shutdown.assert_called_with()
     assert get_messages(write) == [
         {

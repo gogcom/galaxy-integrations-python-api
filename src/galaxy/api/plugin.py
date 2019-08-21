@@ -4,16 +4,14 @@ import json
 import logging
 import logging.handlers
 import sys
-from collections import OrderedDict
 from enum import Enum
-from itertools import count
 from typing import Any, Dict, List, Optional, Set, Union
 
 from galaxy.api.consts import Feature
 from galaxy.api.errors import ImportInProgress, UnknownError
 from galaxy.api.jsonrpc import ApplicationError, NotificationClient, Server
 from galaxy.api.types import Achievement, Authentication, FriendInfo, Game, GameTime, LocalGame, NextStep
-
+from galaxy.task_manager import TaskManager
 
 class JSONEncoder(json.JSONEncoder):
     def default(self, o):  # pylint: disable=method-hidden
@@ -38,7 +36,6 @@ class Plugin:
 
         self._features: Set[Feature] = set()
         self._active = True
-        self._pass_control_task = None
 
         self._reader, self._writer = reader, writer
         self._handshake_token = handshake_token
@@ -47,29 +44,25 @@ class Plugin:
         self._server = Server(self._reader, self._writer, encoder)
         self._notification_client = NotificationClient(self._writer, encoder)
 
-        def eof_handler():
-            self._shutdown()
-
-        self._server.register_eof(eof_handler)
-
         self._achievements_import_in_progress = False
         self._game_times_import_in_progress = False
 
         self._persistent_cache = dict()
 
-        self._tasks = OrderedDict()
-        self._task_counter = count()
+        self._internal_task_manager = TaskManager("plugin internal")
+        self._external_task_manager = TaskManager("plugin external")
 
         # internal
         self._register_method("shutdown", self._shutdown, internal=True)
-        self._register_method("get_capabilities", self._get_capabilities, internal=True)
+        self._register_method("get_capabilities", self._get_capabilities, internal=True, immediate=True)
         self._register_method(
             "initialize_cache",
             self._initialize_cache,
             internal=True,
+            immediate=True,
             sensitive_params="data"
         )
-        self._register_method("ping", self._ping, internal=True)
+        self._register_method("ping", self._ping, internal=True, immediate=True)
 
         # implemented by developer
         self._register_method(
@@ -116,6 +109,13 @@ class Plugin:
         self._register_method("start_game_times_import", self._start_game_times_import)
         self._detect_feature(Feature.ImportGameTime, ["get_game_time"])
 
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        self.close()
+        await self.wait_closed()
+
     @property
     def features(self) -> List[Feature]:
         return list(self._features)
@@ -136,55 +136,65 @@ class Plugin:
         if self._implements(methods):
             self._features.add(feature)
 
-    def _register_method(self, name, handler, result_name=None, internal=False, sensitive_params=False):
-        if internal:
+    def _register_method(self, name, handler, result_name=None, internal=False, immediate=False, sensitive_params=False):
+        def wrap_result(result):
+            if result_name:
+                result = {
+                    result_name: result
+                }
+            return result
+
+        if immediate:
             def method(*args, **kwargs):
                 result = handler(*args, **kwargs)
-                if result_name:
-                    result = {
-                        result_name: result
-                    }
-                return result
+                return wrap_result(result)
 
             self._server.register_method(name, method, True, sensitive_params)
         else:
             async def method(*args, **kwargs):
-                result = await handler(*args, **kwargs)
-                if result_name:
-                    result = {
-                        result_name: result
-                    }
-                return result
+                if not internal:
+                    handler_ = self._wrap_external_method(handler, name)
+                else:
+                    handler_ = handler
+                result = await handler_(*args, **kwargs)
+                return wrap_result(result)
 
             self._server.register_method(name, method, False, sensitive_params)
 
-    def _register_notification(self, name, handler, internal=False, sensitive_params=False):
-        self._server.register_notification(name, handler, internal, sensitive_params)
+    def _register_notification(self, name, handler, internal=False, immediate=False, sensitive_params=False):
+        if not internal and not immediate:
+            handler = self._wrap_external_method(handler, name)
+        self._server.register_notification(name, handler, immediate, sensitive_params)
+
+    def _wrap_external_method(self, handler, name: str):
+        async def wrapper(*args, **kwargs):
+            return await self._external_task_manager.create_task(handler(*args, **kwargs), name, False)
+        return wrapper
 
     async def run(self):
         """Plugin's main coroutine."""
         await self._server.run()
-        if self._pass_control_task is not None:
-            await self._pass_control_task
+        await self._external_task_manager.wait()
+
+    def close(self) -> None:
+        if not self._active:
+            return
+
+        logging.info("Closing plugin")
+        self._server.close()
+        self._external_task_manager.cancel()
+        self._internal_task_manager.create_task(self.shutdown(), "shutdown")
+        self._active = False
+
+    async def wait_closed(self) -> None:
+        await self._external_task_manager.wait()
+        await self._internal_task_manager.wait()
+        await self._server.wait_closed()
+        await self._notification_client.close()
 
     def create_task(self, coro, description):
         """Wrapper around asyncio.create_task - takes care of canceling tasks on shutdown"""
-
-        async def task_wrapper(task_id):
-            try:
-                return await coro
-            except asyncio.CancelledError:
-                logging.debug("Canceled task %d (%s)", task_id, description)
-            except Exception:
-                logging.exception("Exception raised in task %d (%s)", task_id, description)
-            finally:
-                del self._tasks[task_id]
-
-        task_id = next(self._task_counter)
-        logging.debug("Creating task %d (%s)", task_id, description)
-        task = asyncio.create_task(task_wrapper(task_id))
-        self._tasks[task_id] = task
-        return task
+        return self._external_task_manager.create_task(coro, description)
 
     async def _pass_control(self):
         while self._active:
@@ -194,13 +204,11 @@ class Plugin:
                 logging.exception("Unexpected exception raised in plugin tick")
             await asyncio.sleep(1)
 
-    def _shutdown(self):
+    async def _shutdown(self):
         logging.info("Shutting down")
-        self._server.stop()
-        self._active = False
-        self.shutdown()
-        for task in self._tasks.values():
-            task.cancel()
+        self.close()
+        await self._external_task_manager.wait()
+        await self._internal_task_manager.wait()
 
     def _get_capabilities(self):
         return {
@@ -215,7 +223,7 @@ class Plugin:
             self.handshake_complete()
         except Exception:
             logging.exception("Unhandled exception during `handshake_complete` step")
-        self._pass_control_task = asyncio.create_task(self._pass_control())
+        self._internal_task_manager.create_task(self._pass_control(), "tick")
 
     @staticmethod
     def _ping():
@@ -444,7 +452,7 @@ class Plugin:
 
         """
 
-    def shutdown(self) -> None:
+    async def shutdown(self) -> None:
         """This method is called on integration shutdown.
         Override it to implement tear down.
         This method is called by the GOG Galaxy Client."""
@@ -552,7 +560,11 @@ class Plugin:
                 self._achievements_import_in_progress = False
                 self.achievements_import_complete()
 
-        self.create_task(import_games_achievements(game_ids, context), "Games unlocked achievements import")
+        self._external_task_manager.create_task(
+            import_games_achievements(game_ids, context),
+            "unlocked achievements import",
+            handle_exceptions=False
+        )
         self._achievements_import_in_progress = True
 
     async def prepare_achievements_context(self, game_ids: List[str]) -> Any:
@@ -712,7 +724,11 @@ class Plugin:
                 self._game_times_import_in_progress = False
                 self.game_times_import_complete()
 
-        self.create_task(import_game_times(game_ids, context), "Game times import")
+        self._external_task_manager.create_task(
+            import_game_times(game_ids, context),
+            "game times import",
+            handle_exceptions=False
+        )
         self._game_times_import_in_progress = True
 
     async def prepare_game_times_context(self, game_ids: List[str]) -> Any:
@@ -783,8 +799,8 @@ def create_and_run_plugin(plugin_class, argv):
         reader, writer = await asyncio.open_connection("127.0.0.1", port)
         extra_info = writer.get_extra_info("sockname")
         logging.info("Using local address: %s:%u", *extra_info)
-        plugin = plugin_class(reader, writer, token)
-        await plugin.run()
+        async with plugin_class(reader, writer, token) as plugin:
+            await plugin.run()
 
     try:
         if sys.platform == "win32":
