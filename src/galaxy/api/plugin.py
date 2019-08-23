@@ -121,7 +121,7 @@ class Plugin:
         return list(self._features)
 
     @property
-    def persistent_cache(self) -> Dict:
+    def persistent_cache(self) -> Dict[str, str]:
         """The cache is only available after the :meth:`~.handshake_complete()` is called.
         """
         return self._persistent_cache
@@ -243,8 +243,10 @@ class Plugin:
                 self.store_credentials(user_data['credentials'])
                 return Authentication(user_data['userId'], user_data['username'])
 
-         """
-        self.persistent_cache['credentials'] = credentials
+        """
+        # temporary solution for persistent_cache vs credentials issue
+        self.persistent_cache['credentials'] = credentials  # type: ignore
+
         self._notification_client.notify("store_credentials", credentials, sensitive_params=True)
 
     def add_game(self, game: Game) -> None:
