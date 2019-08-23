@@ -6,7 +6,8 @@ GOG Galaxy Integrations Python API
    :includehidden:
 
    Overview <overview>
-   API <galaxy.api>
+   galaxy.api
+   galaxy.http
    Platform ID's <platforms>
 
 Index

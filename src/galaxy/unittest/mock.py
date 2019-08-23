@@ -4,8 +4,8 @@ from unittest.mock import MagicMock
 
 class AsyncMock(MagicMock):
     """
-    ..deprecated:: 0.45
-    Use: :class:`MagicMock` with meth:`~.async_return_value`.
+    .. deprecated:: 0.45
+      Use: :class:`MagicMock` with meth:`~.async_return_value`.
     """
     async def __call__(self, *args, **kwargs):
         return super(AsyncMock, self).__call__(*args, **kwargs)
@@ -13,8 +13,8 @@ class AsyncMock(MagicMock):
 
 def coroutine_mock():
     """
-    ..deprecated:: 0.45
-    Use: :class:`MagicMock` with meth:`~.async_return_value`.
+    .. deprecated:: 0.45
+      Use: :class:`MagicMock` with meth:`~.async_return_value`.
     """
     coro = MagicMock(name="CoroutineResult")
     corofunc = MagicMock(name="CoroutineFunction", side_effect=asyncio.coroutine(coro))

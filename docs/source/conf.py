@@ -38,7 +38,7 @@ extensions = [
 ]
 autodoc_member_order = 'bysource'
 autodoc_inherit_docstrings = False
-autodoc_mock_imports = ["galaxy.http"]
+autodoc_mock_imports = ["aiohttp"]
 
 set_type_checking_flag = True
 
