@@ -15,7 +15,7 @@ async def test_success(plugin, read, write):
         "id": "3",
         "method": "import_local_games"
     }
-    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"")]
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
 
     plugin.get_local_games.return_value = async_return_value([
         LocalGame("1", LocalGameState.Running),
@@ -63,7 +63,7 @@ async def test_failure(plugin, read, write, error, code, message):
         "id": "3",
         "method": "import_local_games"
     }
-    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"")]
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
     plugin.get_local_games.side_effect = error()
     await plugin.run()
     plugin.get_local_games.assert_called_with()

@@ -15,7 +15,7 @@ async def test_success(plugin, read, write):
         "id": "3",
         "method": "import_owned_games"
     }
-    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"")]
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
 
     plugin.get_owned_games.return_value = async_return_value([
         Game("3", "Doom", None, LicenseInfo(LicenseType.SinglePurchase, None)),
@@ -80,7 +80,7 @@ async def test_failure(plugin, read, write):
         "method": "import_owned_games"
     }
 
-    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"")]
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
     plugin.get_owned_games.side_effect = UnknownError()
     await plugin.run()
     plugin.get_owned_games.assert_called_with()

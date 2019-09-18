@@ -135,7 +135,7 @@ async def test_prepare_get_game_time_context_error(plugin, read, write):
             "game_ids": ["6"]
         }
     }
-    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"")]
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
     await plugin.run()
 
     assert get_messages(write) == [
@@ -174,7 +174,7 @@ async def test_import_in_progress(plugin, read, write):
     read.side_effect = [
         async_return_value(create_message(requests[0])),
         async_return_value(create_message(requests[1])),
-        async_return_value(b"")
+        async_return_value(b"", 10)
     ]
 
     await plugin.run()

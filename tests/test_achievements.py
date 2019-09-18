@@ -135,7 +135,7 @@ async def test_prepare_get_unlocked_achievements_context_error(plugin, read, wri
             "game_ids": ["14"]
         }
     }
-    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"")]
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
 
     await plugin.run()
 
@@ -176,7 +176,7 @@ async def test_import_in_progress(plugin, read, write):
     read.side_effect = [
         async_return_value(create_message(requests[0])),
         async_return_value(create_message(requests[1])),
-        async_return_value(b"")
+        async_return_value(b"", 10)
     ]
 
     await plugin.run()

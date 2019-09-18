@@ -17,7 +17,7 @@ async def test_success(plugin, read, write):
         "id": "3",
         "method": "init_authentication"
     }
-    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"")]
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
     plugin.authenticate.return_value = async_return_value(Authentication("132", "Zenek"))
     await plugin.run()
     plugin.authenticate.assert_called_with()
@@ -55,7 +55,7 @@ async def test_failure(plugin, read, write, error, code, message):
         "method": "init_authentication"
     }
 
-    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"")]
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
     plugin.authenticate.side_effect = error()
     await plugin.run()
     plugin.authenticate.assert_called_with()
@@ -84,7 +84,7 @@ async def test_stored_credentials(plugin, read, write):
             }
         }
     }
-    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"")]
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
     plugin.authenticate.return_value = async_return_value(Authentication("132", "Zenek"))
     await plugin.run()
     plugin.authenticate.assert_called_with(stored_credentials={"token": "ABC"})

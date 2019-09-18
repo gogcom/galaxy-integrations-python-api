@@ -174,7 +174,6 @@ class Plugin:
     async def run(self):
         """Plugin's main coroutine."""
         await self._server.run()
-        await self._external_task_manager.wait()
 
     def close(self) -> None:
         if not self._active:

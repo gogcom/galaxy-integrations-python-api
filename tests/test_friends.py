@@ -15,7 +15,7 @@ async def test_get_friends_success(plugin, read, write):
         "method": "import_friends"
     }
 
-    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"")]
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
     plugin.get_friends.return_value = async_return_value([
         FriendInfo("3", "Jan"),
         FriendInfo("5", "Ola")
@@ -45,7 +45,7 @@ async def test_get_friends_failure(plugin, read, write):
         "method": "import_friends"
     }
 
-    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"")]
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
     plugin.get_friends.side_effect = UnknownError()
     await plugin.run()
     plugin.get_friends.assert_called_with()
