@@ -18,6 +18,17 @@ class JsonRpcError(Exception):
     def __eq__(self, other):
         return self.code == other.code and self.message == other.message and self.data == other.data
 
+    def json(self):
+        obj = {
+            "code": self.code,
+            "message": self.message
+        }
+
+        if self.data is not None:
+            obj["error"]["data"] = self.data
+
+        return obj
+
 class ParseError(JsonRpcError):
     def __init__(self):
         super().__init__(-32700, "Parse error")
@@ -232,14 +243,8 @@ class Server():
         response = {
             "jsonrpc": "2.0",
             "id": request_id,
-            "error": {
-                "code": error.code,
-                "message": error.message
-            }
+            "error": error.json()
         }
-
-        if error.data is not None:
-            response["error"]["data"] = error.data
 
         self._send(response)
 
