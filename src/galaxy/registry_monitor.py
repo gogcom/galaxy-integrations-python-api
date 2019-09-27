@@ -1,5 +1,5 @@
-import platform
-if platform.system().lower() == "windows":
+import sys
+if sys.platform == "win32":
     import logging
     import ctypes
     from ctypes.wintypes import LONG, HKEY, LPCWSTR, DWORD, BOOL, HANDLE, LPVOID
