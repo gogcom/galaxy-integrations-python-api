@@ -90,6 +90,8 @@ class Platform(Enum):
     Playfire = "playfire"
     Oculus = "oculus"
     Test = "test"
+    GameBoyColor = "gbc"
+    GameBoyAdvance = "gba"
 
 
 class Feature(Enum):
