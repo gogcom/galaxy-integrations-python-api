@@ -151,3 +151,15 @@ class GameTime():
     game_id: str
     time_played: Optional[int]
     last_played_time: Optional[int]
+
+@dataclass
+class GameLibrarySettings():
+    """Library settings of a game, defines assigned tags and visibility flag.
+
+    :param game_id: id of the related game
+    :param tags: collection of tags assigned to the game
+    :param hidden: indicates if the game should be hidden in GOG Galaxy application
+    """
+    game_id: str
+    tags: Optional[List[str]]
+    hidden: Optional[bool]

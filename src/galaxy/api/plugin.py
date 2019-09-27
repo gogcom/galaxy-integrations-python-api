@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Set, Union
 from galaxy.api.consts import Feature
 from galaxy.api.errors import ImportInProgress, UnknownError
 from galaxy.api.jsonrpc import ApplicationError, NotificationClient, Server
-from galaxy.api.types import Achievement, Authentication, FriendInfo, Game, GameTime, LocalGame, NextStep
+from galaxy.api.types import Achievement, Authentication, FriendInfo, Game, GameTime, LocalGame, NextStep, GameLibrarySettings
 from galaxy.task_manager import TaskManager
 
 class JSONEncoder(json.JSONEncoder):
@@ -46,6 +46,7 @@ class Plugin:
 
         self._achievements_import_in_progress = False
         self._game_times_import_in_progress = False
+        self._game_library_settings_import_in_progress = False
 
         self._persistent_cache = dict()
 
@@ -108,6 +109,9 @@ class Plugin:
 
         self._register_method("start_game_times_import", self._start_game_times_import)
         self._detect_feature(Feature.ImportGameTime, ["get_game_time"])
+
+        self._register_method("start_game_library_settings_import", self._start_game_library_settings_import)
+        self._detect_feature(Feature.ImportGameLibrarySettings, ["get_game_library_settings"])
 
     async def __aenter__(self):
         return self
@@ -401,6 +405,20 @@ class Plugin:
 
     def _game_times_import_finished(self) -> None:
         self._notification_client.notify("game_times_import_finished", None)
+
+    def _game_library_settings_import_success(self, game_library_settings: GameLibrarySettings) -> None:
+        params = {"game_library_settings": game_library_settings}
+        self._notification_client.notify("game_library_settings_import_success", params)
+
+    def _game_library_settings_import_failure(self, game_id: str, error: ApplicationError) -> None:
+        params = {
+            "game_id": game_id,
+            "error": error.json()
+        }
+        self._notification_client.notify("game_library_settings_import_failure", params)
+
+    def _game_library_settings_import_finished(self) -> None:
+        self._notification_client.notify("game_library_settings_import_finished", None)
 
     def lost_authentication(self) -> None:
         """Notify the client that integration has lost authentication for the
@@ -750,6 +768,63 @@ class Plugin:
         (like updating cache).
         """
 
+    async def _start_game_library_settings_import(self, game_ids: List[str]) -> None:
+        if self._game_library_settings_import_in_progress:
+            raise ImportInProgress()
+
+        context = await self.prepare_game_library_settings_context(game_ids)
+
+        async def import_game_library_settings(game_id, context_):
+            try:
+                game_library_settings = await self.get_game_library_settings(game_id, context_)
+                self._game_library_settings_import_success(game_library_settings)
+            except ApplicationError as error:
+                self._game_library_settings_import_failure(game_id, error)
+            except Exception:
+                logging.exception("Unexpected exception raised in import_game_library_settings")
+                self._game_library_settings_import_failure(game_id, UnknownError())
+
+        async def import_game_library_settings_set(game_ids_, context_):
+            try:
+                imports = [import_game_library_settings(game_id, context_) for game_id in game_ids_]
+                await asyncio.gather(*imports)
+            finally:
+                self._game_library_settings_import_finished()
+                self._game_library_settings_import_in_progress = False
+                self.game_library_settings_import_complete()
+
+        self._external_task_manager.create_task(
+            import_game_library_settings_set(game_ids, context),
+            "game library settings import",
+            handle_exceptions=False
+        )
+        self._game_library_settings_import_in_progress = True
+
+    async def prepare_game_library_settings_context(self, game_ids: List[str]) -> Any:
+        """Override this method to prepare context for get_game_library_settings.
+        This allows for optimizations like batch requests to platform API.
+        Default implementation returns None.
+
+        :param game_ids: the ids of the games for which game time are imported
+        :return: context
+        """
+        return None
+
+    async def get_game_library_settings(self, game_id: str, context: Any) -> GameLibrarySettings:
+        """Override this method to return the game library settings for the game
+        identified by the provided game_id.
+        This method is called by import task initialized by GOG Galaxy Client.
+
+        :param game_id: the id of the game for which the game time is returned
+        :param context: the value returned from :meth:`prepare_game_library_settings_context`
+        :return: GameLibrarySettings object
+        """
+        raise NotImplementedError()
+
+    def game_library_settings_import_complete(self) -> None:
+        """Override this method to handle operations after game times import is finished
+        (like updating cache).
+        """
 
 def create_and_run_plugin(plugin_class, argv):
     """Call this method as an entry point for the implemented integration.

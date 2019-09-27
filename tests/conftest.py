@@ -49,7 +49,10 @@ async def plugin(reader, writer):
         "game_times_import_complete",
         "shutdown_platform_client",
         "shutdown",
-        "tick"
+        "tick",
+        "get_game_library_settings",
+        "prepare_game_library_settings_context",
+        "game_library_settings_import_complete",
     )
 
     with ExitStack() as stack:

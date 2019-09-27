@@ -110,6 +110,7 @@ class Feature(Enum):
     ImportFriends = "ImportFriends"
     ShutdownPlatformClient = "ShutdownPlatformClient"
     LaunchPlatformClient = "LaunchPlatformClient"
+    ImportGameLibrarySettings = "ImportGameLibrarySettings"
 
 
 class LicenseType(Enum):
