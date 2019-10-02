@@ -53,6 +53,9 @@ async def plugin(reader, writer):
         "get_game_library_settings",
         "prepare_game_library_settings_context",
         "game_library_settings_import_complete",
+        "get_os_compatibility",
+        "prepare_os_compatibility_context",
+        "os_compatibility_import_complete",
     )
 
     with ExitStack() as stack:

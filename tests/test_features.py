@@ -15,7 +15,8 @@ def test_base_class():
         Feature.ImportFriends,
         Feature.ShutdownPlatformClient,
         Feature.LaunchPlatformClient,
-        Feature.ImportGameLibrarySettings
+        Feature.ImportGameLibrarySettings,
+        Feature.ImportOSCompatibility
     }
 
 

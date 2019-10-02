@@ -1,10 +1,11 @@
 from dataclasses import dataclass
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
 from galaxy.api.consts import LicenseType, LocalGameState
 
+
 @dataclass
-class Authentication():
+class Authentication:
     """Return this from :meth:`.authenticate` or :meth:`.pass_login_credentials`
     to inform the client that authentication has successfully finished.
 
@@ -14,8 +15,9 @@ class Authentication():
     user_id: str
     user_name: str
 
+
 @dataclass
-class Cookie():
+class Cookie:
     """Cookie
 
     :param name: name of the cookie
@@ -28,8 +30,9 @@ class Cookie():
     domain: Optional[str] = None
     path: Optional[str] = None
 
+
 @dataclass
-class NextStep():
+class NextStep:
     """Return this from :meth:`.authenticate` or :meth:`.pass_login_credentials` to open client built-in browser with given url.
     For example:
 
@@ -67,8 +70,9 @@ class NextStep():
     cookies: Optional[List[Cookie]] = None
     js: Optional[Dict[str, List[str]]] = None
 
+
 @dataclass
-class LicenseInfo():
+class LicenseInfo:
     """Information about the license of related product.
 
     :param license_type: type of license
@@ -77,8 +81,9 @@ class LicenseInfo():
     license_type: LicenseType
     owner: Optional[str] = None
 
+
 @dataclass
-class Dlc():
+class Dlc:
     """Downloadable content object.
 
     :param dlc_id: id of the dlc
@@ -89,8 +94,9 @@ class Dlc():
     dlc_title: str
     license_info: LicenseInfo
 
+
 @dataclass
-class Game():
+class Game:
     """Game object.
 
     :param game_id: unique identifier of the game, this will be passed as parameter for methods such as launch_game
@@ -103,8 +109,9 @@ class Game():
     dlcs: Optional[List[Dlc]]
     license_info: LicenseInfo
 
+
 @dataclass
-class Achievement():
+class Achievement:
     """Achievement, has to be initialized with either id or name.
 
     :param unlock_time: unlock time of the achievement
@@ -119,8 +126,9 @@ class Achievement():
         assert self.achievement_id or self.achievement_name, \
             "One of achievement_id or achievement_name is required"
 
+
 @dataclass
-class LocalGame():
+class LocalGame:
     """Game locally present on the authenticated user's computer.
 
     :param game_id: id of the game
@@ -129,8 +137,9 @@ class LocalGame():
     game_id: str
     local_game_state: LocalGameState
 
+
 @dataclass
-class FriendInfo():
+class FriendInfo:
     """Information about a friend of the currently authenticated user.
 
     :param user_id: id of the user
@@ -139,8 +148,9 @@ class FriendInfo():
     user_id: str
     user_name: str
 
+
 @dataclass
-class GameTime():
+class GameTime:
     """Game time of a game, defines the total time spent in the game
     and the last time the game was played.
 
@@ -152,8 +162,9 @@ class GameTime():
     time_played: Optional[int]
     last_played_time: Optional[int]
 
+
 @dataclass
-class GameLibrarySettings():
+class GameLibrarySettings:
     """Library settings of a game, defines assigned tags and visibility flag.
 
     :param game_id: id of the related game

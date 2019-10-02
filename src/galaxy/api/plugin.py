@@ -7,11 +7,12 @@ import sys
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set, Union
 
-from galaxy.api.consts import Feature
+from galaxy.api.consts import Feature, OSCompatibility
 from galaxy.api.errors import ImportInProgress, UnknownError
 from galaxy.api.jsonrpc import ApplicationError, NotificationClient, Server
 from galaxy.api.types import Achievement, Authentication, FriendInfo, Game, GameTime, LocalGame, NextStep, GameLibrarySettings
 from galaxy.task_manager import TaskManager
+
 
 class JSONEncoder(json.JSONEncoder):
     def default(self, o):  # pylint: disable=method-hidden
@@ -47,6 +48,7 @@ class Plugin:
         self._achievements_import_in_progress = False
         self._game_times_import_in_progress = False
         self._game_library_settings_import_in_progress = False
+        self._os_compatibility_import_in_progress = False
 
         self._persistent_cache = dict()
 
@@ -113,6 +115,9 @@ class Plugin:
         self._register_method("start_game_library_settings_import", self._start_game_library_settings_import)
         self._detect_feature(Feature.ImportGameLibrarySettings, ["get_game_library_settings"])
 
+        self._register_method("start_os_compatibility_import", self._start_os_compatibility_import)
+        self._detect_feature(Feature.ImportOSCompatibility, ["get_os_compatibility"])
+
     async def __aenter__(self):
         return self
 
@@ -173,6 +178,7 @@ class Plugin:
     def _wrap_external_method(self, handler, name: str):
         async def wrapper(*args, **kwargs):
             return await self._external_task_manager.create_task(handler(*args, **kwargs), name, False)
+
         return wrapper
 
     async def run(self):
@@ -419,6 +425,27 @@ class Plugin:
 
     def _game_library_settings_import_finished(self) -> None:
         self._notification_client.notify("game_library_settings_import_finished", None)
+
+    def _os_compatibility_import_success(self, game_id: str, os_compatibility: Optional[OSCompatibility]) -> None:
+        self._notification_client.notify(
+            "os_compatibility_import_success",
+            {
+                "game_id": game_id,
+                "os_compatibility": os_compatibility
+            }
+        )
+
+    def _os_compatibility_import_failure(self, game_id: str, error: ApplicationError) -> None:
+        self._notification_client.notify(
+            "os_compatibility_import_failure",
+            {
+                "game_id": game_id,
+                "error": error.json()
+            }
+        )
+
+    def _os_compatibility_import_finished(self) -> None:
+        self._notification_client.notify("os_compatibility_import_finished", None)
 
     def lost_authentication(self) -> None:
         """Notify the client that integration has lost authentication for the
@@ -805,7 +832,7 @@ class Plugin:
         This allows for optimizations like batch requests to platform API.
         Default implementation returns None.
 
-        :param game_ids: the ids of the games for which game time are imported
+        :param game_ids: the ids of the games for which game library settings are imported
         :return: context
         """
         return None
@@ -815,16 +842,73 @@ class Plugin:
         identified by the provided game_id.
         This method is called by import task initialized by GOG Galaxy Client.
 
-        :param game_id: the id of the game for which the game time is returned
+        :param game_id: the id of the game for which the game library settings are imported
         :param context: the value returned from :meth:`prepare_game_library_settings_context`
         :return: GameLibrarySettings object
         """
         raise NotImplementedError()
 
     def game_library_settings_import_complete(self) -> None:
-        """Override this method to handle operations after game times import is finished
+        """Override this method to handle operations after game library settings import is finished
         (like updating cache).
         """
+
+    async def _start_os_compatibility_import(self, game_ids: List[str]) -> None:
+        if self._os_compatibility_import_in_progress:
+            raise ImportInProgress()
+
+        context = await self.prepare_os_compatibility_context(game_ids)
+
+        async def import_os_compatibility(game_id, context_):
+            try:
+                os_compatibility = await self.get_os_compatibility(game_id, context_)
+                self._os_compatibility_import_success(game_id, os_compatibility)
+            except ApplicationError as error:
+                self._os_compatibility_import_failure(game_id, error)
+            except Exception:
+                logging.exception("Unexpected exception raised in import_os_compatibility")
+                self._os_compatibility_import_failure(game_id, UnknownError())
+
+        async def import_os_compatibility_set(game_ids_, context_):
+            try:
+                await asyncio.gather(*[
+                    import_os_compatibility(game_id, context_) for game_id in game_ids_
+                ])
+            finally:
+                self._os_compatibility_import_finished()
+                self._os_compatibility_import_in_progress = False
+                self.os_compatibility_import_complete()
+
+        self._external_task_manager.create_task(
+            import_os_compatibility_set(game_ids, context),
+            "game OS compatibility import",
+            handle_exceptions=False
+        )
+        self._os_compatibility_import_in_progress = True
+
+    async def prepare_os_compatibility_context(self, game_ids: List[str]) -> Any:
+        """Override this method to prepare context for get_os_compatibility.
+        This allows for optimizations like batch requests to platform API.
+        Default implementation returns None.
+
+        :param game_ids: the ids of the games for which game os compatibility is imported
+        :return: context
+        """
+        return None
+
+    async def get_os_compatibility(self, game_id: str, context: Any) -> Optional[OSCompatibility]:
+        """Override this method to return the OS compatibility for the game with the provided game_id.
+        This method is called by import task initialized by GOG Galaxy Client.
+
+        :param game_id: the id of the game for which the game os compatibility is imported
+        :param context: the value returned from :meth:`prepare_os_compatibility_context`
+        :return: OSCompatibility flags indicating compatible OSs, or None if compatibility is not know
+        """
+        raise NotImplementedError()
+
+    def os_compatibility_import_complete(self) -> None:
+        """Override this method to handle operations after OS compatibility import is finished (like updating cache)."""
+
 
 def create_and_run_plugin(plugin_class, argv):
     """Call this method as an entry point for the implemented integration.

@@ -9,7 +9,7 @@ from tests import create_message, get_messages
 
 
 @pytest.mark.asyncio
-async def test_get_game_time_success(plugin, read, write):
+async def test_get_library_settings_success(plugin, read, write):
     plugin.prepare_game_library_settings_context.return_value = async_return_value("abc")
     request = {
         "jsonrpc": "2.0",
