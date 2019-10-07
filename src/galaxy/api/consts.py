@@ -90,6 +90,7 @@ class Platform(Enum):
     Playfire = "playfire"
     Oculus = "oculus"
     Test = "test"
+    Rockstar = "rockstar"
 
 
 class Feature(Enum):
