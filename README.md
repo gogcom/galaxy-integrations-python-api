@@ -123,6 +123,10 @@ installed
     └── manifest.json
 ```
 
+## Logs
+
+On Windows, plugin logs are stored at `C:\ProgramData\GOG.com\Galaxy\logs\plugin-<plugin_type>-<plugin_guid>.log`.
+
 ## Legal Notice
 
 By integrating or attempting to integrate any applications or content with or into GOG Galaxy 2.0 you represent that such application or content is your original creation (other than any software made available by GOG) and/or that you have all necessary rights to grant such applicable rights to the relevant community integration to GOG and to GOG Galaxy 2.0 end users for the purpose of use of such community integration and that such community integration comply with any third party license and other requirements including compliance with applicable laws.
