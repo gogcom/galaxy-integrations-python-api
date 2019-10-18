@@ -156,7 +156,7 @@ class GameTime:
 
     :param game_id: id of the related game
     :param time_played: the total time spent in the game in **minutes**
-    :param last_time_played: last time the game was played (**unix timestamp**)
+    :param last_played_time: last time the game was played (**unix timestamp**)
     """
     game_id: str
     time_played: Optional[int]
