@@ -78,7 +78,8 @@ def create_tcp_connector(*args, **kwargs) -> aiohttp.TCPConnector:
     ssl_context.load_verify_locations(certifi.where())
     kwargs.setdefault("ssl", ssl_context)
     kwargs.setdefault("limit", DEFAULT_LIMIT)
-    return aiohttp.TCPConnector(*args, **kwargs)  # type: ignore due to https://github.com/python/mypy/issues/4001
+    # due to https://github.com/python/mypy/issues/4001
+    return aiohttp.TCPConnector(*args, **kwargs)  # type: ignore
 
 
 def create_client_session(*args, **kwargs) -> aiohttp.ClientSession:
@@ -103,7 +104,8 @@ def create_client_session(*args, **kwargs) -> aiohttp.ClientSession:
     kwargs.setdefault("connector", create_tcp_connector())
     kwargs.setdefault("timeout", aiohttp.ClientTimeout(total=DEFAULT_TIMEOUT))
     kwargs.setdefault("raise_for_status", True)
-    return aiohttp.ClientSession(*args, **kwargs)  # type: ignore due to https://github.com/python/mypy/issues/4001
+    # due to https://github.com/python/mypy/issues/4001
+    return aiohttp.ClientSession(*args, **kwargs)  # type: ignore
 
 
 @contextmanager
