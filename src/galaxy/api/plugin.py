@@ -10,7 +10,9 @@ from typing import Any, Dict, List, Optional, Set, Union
 from galaxy.api.consts import Feature, OSCompatibility
 from galaxy.api.errors import ImportInProgress, UnknownError
 from galaxy.api.jsonrpc import ApplicationError, NotificationClient, Server
-from galaxy.api.types import Achievement, Authentication, FriendInfo, Game, GameTime, LocalGame, NextStep, GameLibrarySettings
+from galaxy.api.types import (
+    Achievement, Authentication, FriendInfo, Game, GameLibrarySettings, GameTime, LocalGame, NextStep, UserPresence
+)
 from galaxy.task_manager import TaskManager
 
 
@@ -49,6 +51,7 @@ class Plugin:
         self._game_times_import_in_progress = False
         self._game_library_settings_import_in_progress = False
         self._os_compatibility_import_in_progress = False
+        self._user_presence_import_in_progress = False
 
         self._persistent_cache = dict()
 
@@ -117,6 +120,9 @@ class Plugin:
 
         self._register_method("start_os_compatibility_import", self._start_os_compatibility_import)
         self._detect_feature(Feature.ImportOSCompatibility, ["get_os_compatibility"])
+
+        self._register_method("start_user_presence_import", self._start_user_presence_import)
+        self._detect_feature(Feature.ImportUserPresence, ["get_user_presence"])
 
     async def __aenter__(self):
         return self
@@ -265,7 +271,7 @@ class Plugin:
 
         """
         # temporary solution for persistent_cache vs credentials issue
-        self.persistent_cache['credentials'] = credentials  # type: ignore
+        self.persistent_cache["credentials"] = credentials  # type: ignore
 
         self._notification_client.notify("store_credentials", credentials, sensitive_params=True)
 
@@ -449,6 +455,27 @@ class Plugin:
 
     def _os_compatibility_import_finished(self) -> None:
         self._notification_client.notify("os_compatibility_import_finished", None)
+
+    def _user_presence_import_success(self, user_id: str, user_presence: UserPresence) -> None:
+        self._notification_client.notify(
+            "user_presence_import_success",
+            {
+                "user_id": user_id,
+                "presence": user_presence
+            }
+        )
+
+    def _user_presence_import_failure(self, user_id: str, error: ApplicationError) -> None:
+        self._notification_client.notify(
+            "user_presence_import_failure",
+            {
+                "user_id": user_id,
+                "error": error.json()
+            }
+        )
+
+    def _user_presence_import_finished(self) -> None:
+        self._notification_client.notify("user_presence_import_finished", None)
 
     def lost_authentication(self) -> None:
         """Notify the client that integration has lost authentication for the
@@ -911,6 +938,62 @@ class Plugin:
 
     def os_compatibility_import_complete(self) -> None:
         """Override this method to handle operations after OS compatibility import is finished (like updating cache)."""
+
+    async def _start_user_presence_import(self, user_ids: List[str]) -> None:
+        if self._user_presence_import_in_progress:
+            raise ImportInProgress()
+
+        context = await self.prepare_user_presence_context(user_ids)
+
+        async def import_user_presence(user_id, context_) -> None:
+            try:
+                self._user_presence_import_success(user_id, await self.get_user_presence(user_id, context_))
+            except ApplicationError as error:
+                self._user_presence_import_failure(user_id, error)
+            except Exception:
+                logging.exception("Unexpected exception raised in import_user_presence")
+                self._user_presence_import_failure(user_id, UnknownError())
+
+        async def import_user_presence_set(user_ids_, context_) -> None:
+            try:
+                await asyncio.gather(*[
+                    import_user_presence(user_id, context_)
+                    for user_id in user_ids_
+                ])
+            finally:
+                self._user_presence_import_finished()
+                self._user_presence_import_in_progress = False
+                self.user_presence_import_complete()
+
+        self._external_task_manager.create_task(
+            import_user_presence_set(user_ids, context),
+            "user presence import",
+            handle_exceptions=False
+        )
+        self._user_presence_import_in_progress = True
+
+    async def prepare_user_presence_context(self, user_ids: List[str]) -> Any:
+        """Override this method to prepare context for get_user_presence.
+        This allows for optimizations like batch requests to platform API.
+        Default implementation returns None.
+
+        :param user_ids: the ids of the users for whom presence information is imported
+        :return: context
+        """
+        return None
+
+    async def get_user_presence(self, user_id: str, context: Any) -> UserPresence:
+        """Override this method to return presence information for the user with the provided user_id.
+        This method is called by import task initialized by GOG Galaxy Client.
+
+        :param user_id: the id of the user for whom presence information is imported
+        :param context: the value returned from :meth:`prepare_user_presence_context`
+        :return: UserPresence presence information of the provided user
+        """
+        raise NotImplementedError()
+
+    def user_presence_import_complete(self) -> None:
+        """Override this method to handle operations after presence import is finished (like updating cache)."""
 
 
 def create_and_run_plugin(plugin_class, argv):
