@@ -184,6 +184,7 @@ class Plugin:
     async def run(self):
         """Plugin's main coroutine."""
         await self._server.run()
+        logging.debug("Plugin run loop finished")
 
     def close(self) -> None:
         if not self._active:
@@ -196,10 +197,12 @@ class Plugin:
         self._active = False
 
     async def wait_closed(self) -> None:
+        logging.debug("Waiting for plugin to close")
         await self._external_task_manager.wait()
         await self._internal_task_manager.wait()
         await self._server.wait_closed()
         await self._notification_client.close()
+        logging.debug("Plugin closed")
 
     def create_task(self, coro, description):
         """Wrapper around asyncio.create_task - takes care of canceling tasks on shutdown"""

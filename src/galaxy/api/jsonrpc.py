@@ -129,8 +129,9 @@ class Server():
             await asyncio.sleep(0) # To not starve task queue
 
     def close(self):
-        logging.info("Closing JSON-RPC server - not more messages will be read")
-        self._active = False
+        if self._active:
+            logging.info("Closing JSON-RPC server - not more messages will be read")
+            self._active = False
 
     async def wait_closed(self):
         await self._task_manager.wait()
@@ -281,6 +282,7 @@ class NotificationClient():
         self._send(notification)
 
     async def close(self):
+        self._task_manager.cancel()
         await self._task_manager.wait()
 
     def _send(self, data):
