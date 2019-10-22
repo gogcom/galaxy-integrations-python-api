@@ -3,7 +3,7 @@ from unittest.mock import call
 import pytest
 from galaxy.api.types import GameTime
 from galaxy.api.errors import BackendError
-from galaxy.unittest.mock import async_return_value
+from galaxy.unittest.mock import async_return_value, skip_loop
 
 from tests import create_message, get_messages
 
@@ -199,6 +199,7 @@ async def test_import_in_progress(plugin, read, write):
 async def test_update_game(plugin, write):
     game_time = GameTime("3", 60, 1549550504)
     plugin.update_game_time(game_time)
+    await skip_loop()
 
     assert get_messages(write) == [
         {

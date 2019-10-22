@@ -1,6 +1,6 @@
 from galaxy.api.types import FriendInfo
 from galaxy.api.errors import UnknownError
-from galaxy.unittest.mock import async_return_value
+from galaxy.unittest.mock import async_return_value, skip_loop
 
 import pytest
 
@@ -67,6 +67,7 @@ async def test_add_friend(plugin, write):
     friend = FriendInfo("7", "Kuba")
 
     plugin.add_friend(friend)
+    await skip_loop()
 
     assert get_messages(write) == [
         {
@@ -82,6 +83,7 @@ async def test_add_friend(plugin, write):
 @pytest.mark.asyncio
 async def test_remove_friend(plugin, write):
     plugin.remove_friend("5")
+    await skip_loop()
 
     assert get_messages(write) == [
         {

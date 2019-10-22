@@ -3,7 +3,7 @@ import pytest
 from galaxy.api.types import Game, Dlc, LicenseInfo
 from galaxy.api.consts import LicenseType
 from galaxy.api.errors import UnknownError
-from galaxy.unittest.mock import async_return_value
+from galaxy.unittest.mock import async_return_value, skip_loop
 
 from tests import create_message, get_messages
 
@@ -100,6 +100,7 @@ async def test_failure(plugin, read, write):
 async def test_add_game(plugin, write):
     game = Game("3", "Doom", None, LicenseInfo(LicenseType.SinglePurchase, None))
     plugin.add_game(game)
+    await skip_loop()
     assert get_messages(write) == [
         {
             "jsonrpc": "2.0",
@@ -120,6 +121,7 @@ async def test_add_game(plugin, write):
 @pytest.mark.asyncio
 async def test_remove_game(plugin, write):
     plugin.remove_game("5")
+    await skip_loop()
     assert get_messages(write) == [
         {
             "jsonrpc": "2.0",
@@ -135,6 +137,7 @@ async def test_remove_game(plugin, write):
 async def test_update_game(plugin, write):
     game = Game("3", "Doom", None, LicenseInfo(LicenseType.SinglePurchase, None))
     plugin.update_game(game)
+    await skip_loop()
     assert get_messages(write) == [
         {
             "jsonrpc": "2.0",

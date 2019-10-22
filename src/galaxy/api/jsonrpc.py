@@ -88,6 +88,7 @@ class Server():
         self._methods = {}
         self._notifications = {}
         self._task_manager = TaskManager("jsonrpc server")
+        self._write_lock = asyncio.Lock()
 
     def register_method(self, name, callback, immediate, sensitive_params=False):
         """
@@ -223,12 +224,16 @@ class Server():
             raise InvalidRequest()
 
     def _send(self, data):
+        async def send_task(data_):
+            async with self._write_lock:
+                self._writer.write(data_)
+                await self._writer.drain()
+
         try:
             line = self._encoder.encode(data)
             logging.debug("Sending data: %s", line)
             data = (line + "\n").encode("utf-8")
-            self._writer.write(data)
-            self._task_manager.create_task(self._writer.drain(), "drain")
+            self._task_manager.create_task(send_task(data), "send")
         except TypeError as error:
             logging.error(str(error))
 
@@ -263,6 +268,7 @@ class NotificationClient():
         self._encoder = encoder
         self._methods = {}
         self._task_manager = TaskManager("notification client")
+        self._write_lock = asyncio.Lock()
 
     def notify(self, method, params, sensitive_params=False):
         """
@@ -286,12 +292,16 @@ class NotificationClient():
         await self._task_manager.wait()
 
     def _send(self, data):
+        async def send_task(data_):
+            async with self._write_lock:
+                self._writer.write(data_)
+                await self._writer.drain()
+
         try:
             line = self._encoder.encode(data)
             data = (line + "\n").encode("utf-8")
             logging.debug("Sending %d byte of data", len(data))
-            self._writer.write(data)
-            self._task_manager.create_task(self._writer.drain(), "drain")
+            self._task_manager.create_task(send_task(data), "send")
         except TypeError as error:
             logging.error("Failed to parse outgoing message: %s", str(error))
 

@@ -3,7 +3,7 @@ import pytest
 from galaxy.api.types import LocalGame
 from galaxy.api.consts import LocalGameState
 from galaxy.api.errors import UnknownError, FailedParsingManifest
-from galaxy.unittest.mock import async_return_value
+from galaxy.unittest.mock import async_return_value, skip_loop
 
 from tests import create_message, get_messages
 
@@ -83,6 +83,7 @@ async def test_failure(plugin, read, write, error, code, message):
 async def test_local_game_state_update(plugin, write):
     game = LocalGame("1", LocalGameState.Running)
     plugin.update_local_game_status(game)
+    await skip_loop()
 
     assert get_messages(write) == [
         {

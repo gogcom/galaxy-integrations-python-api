@@ -1,6 +1,6 @@
 import pytest
 
-from galaxy.unittest.mock import async_return_value
+from galaxy.unittest.mock import async_return_value, skip_loop
 
 from tests import create_message, get_messages
 
@@ -57,6 +57,7 @@ async def test_set_cache(plugin, write, cache_data):
 
     plugin.persistent_cache.update(cache_data)
     plugin.push_cache()
+    await skip_loop()
 
     assert_rpc_request(write, "push_cache", cache_data)
     assert cache_data == plugin.persistent_cache
@@ -68,6 +69,7 @@ async def test_clear_cache(plugin, write, cache_data):
 
     plugin.persistent_cache.clear()
     plugin.push_cache()
+    await skip_loop()
 
     assert_rpc_request(write, "push_cache", {})
     assert {} == plugin.persistent_cache

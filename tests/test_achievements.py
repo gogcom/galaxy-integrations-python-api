@@ -5,7 +5,7 @@ from pytest import raises
 
 from galaxy.api.types import Achievement
 from galaxy.api.errors import BackendError
-from galaxy.unittest.mock import async_return_value
+from galaxy.unittest.mock import async_return_value, skip_loop
 
 from tests import create_message, get_messages
 
@@ -201,6 +201,7 @@ async def test_import_in_progress(plugin, read, write):
 async def test_unlock_achievement(plugin, write):
     achievement = Achievement(achievement_id="lvl20", unlock_time=1548422395)
     plugin.unlock_achievement("14", achievement)
+    await skip_loop()
     response = json.loads(write.call_args[0][0])
 
     assert response == {

@@ -5,7 +5,7 @@ from galaxy.api.errors import (
     UnknownError, InvalidCredentials, NetworkError, LoggedInElsewhere, ProtocolError,
     BackendNotAvailable, BackendTimeout, BackendError, TemporaryBlocked, Banned, AccessDenied
 )
-from galaxy.unittest.mock import async_return_value
+from galaxy.unittest.mock import async_return_value, skip_loop
 
 from tests import create_message, get_messages
 
@@ -97,6 +97,7 @@ async def test_store_credentials(plugin, write):
         "token": "ABC"
     }
     plugin.store_credentials(credentials)
+    await skip_loop()
 
     assert get_messages(write) == [
         {
@@ -110,6 +111,7 @@ async def test_store_credentials(plugin, write):
 @pytest.mark.asyncio
 async def test_lost_authentication(plugin, write):
     plugin.lost_authentication()
+    await skip_loop()
 
     assert get_messages(write) == [
         {
