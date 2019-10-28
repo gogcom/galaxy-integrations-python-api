@@ -1,4 +1,4 @@
-from galaxy.api.types import FriendInfo
+from galaxy.api.types import UserInfo
 from galaxy.api.errors import UnknownError
 from galaxy.unittest.mock import async_return_value, skip_loop
 
@@ -17,8 +17,8 @@ async def test_get_friends_success(plugin, read, write):
 
     read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
     plugin.get_friends.return_value = async_return_value([
-        FriendInfo("3", "Jan"),
-        FriendInfo("5", "Ola")
+        UserInfo("3", "Jan"),
+        UserInfo("5", "Ola")
     ])
     await plugin.run()
     plugin.get_friends.assert_called_with()
@@ -64,7 +64,7 @@ async def test_get_friends_failure(plugin, read, write):
 
 @pytest.mark.asyncio
 async def test_add_friend(plugin, write):
-    friend = FriendInfo("7", "Kuba")
+    friend = UserInfo("7", "Kuba")
 
     plugin.add_friend(friend)
     await skip_loop()

@@ -140,7 +140,10 @@ class LocalGame:
 
 @dataclass
 class FriendInfo:
-    """Information about a friend of the currently authenticated user.
+    """
+    .. deprecated:: 0.56
+    Use: :class:`UserInfo`.
+    Information about a friend of the currently authenticated user.
 
     :param user_id: id of the user
     :param user_name: username of the user
@@ -148,6 +151,16 @@ class FriendInfo:
     user_id: str
     user_name: str
 
+
+@dataclass
+class UserInfo:
+    """Information about a user of related user.
+
+    :param user_id: id of the user
+    :param user_name: username of the user
+    """
+    user_id: str
+    user_name: str
 
 @dataclass
 class GameTime:

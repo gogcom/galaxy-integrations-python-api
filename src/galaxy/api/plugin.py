@@ -11,7 +11,7 @@ from galaxy.api.consts import Feature, OSCompatibility
 from galaxy.api.errors import ImportInProgress, UnknownError
 from galaxy.api.jsonrpc import ApplicationError, NotificationClient, Server
 from galaxy.api.types import (
-    Achievement, Authentication, FriendInfo, Game, GameLibrarySettings, GameTime, LocalGame, NextStep, UserPresence
+    Achievement, Authentication, Game, GameLibrarySettings, GameTime, LocalGame, NextStep, UserInfo, UserPresence
 )
 from galaxy.task_manager import TaskManager
 
@@ -383,10 +383,10 @@ class Plugin:
         params = {"local_game": local_game}
         self._notification_client.notify("local_game_status_changed", params)
 
-    def add_friend(self, user: FriendInfo) -> None:
+    def add_friend(self, user: UserInfo) -> None:
         """Notify the client to add a user to friends list of the currently authenticated user.
 
-        :param user: FriendInfo of a user that the client will add to friends list
+        :param user: UserInfo of a user that the client will add to friends list
         """
         params = {"friend_info": user}
         self._notification_client.notify("friend_added", params)
@@ -747,7 +747,7 @@ class Plugin:
         This method is called by the GOG Galaxy Client."""
         raise NotImplementedError()
 
-    async def get_friends(self) -> List[FriendInfo]:
+    async def get_friends(self) -> List[UserInfo]:
         """Override this method to return the friends list
         of the currently authenticated user.
         This method is called by the GOG Galaxy Client.
