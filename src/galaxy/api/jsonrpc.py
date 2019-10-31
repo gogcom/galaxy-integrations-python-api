@@ -64,6 +64,7 @@ class UnknownError(ApplicationError):
         super().__init__(0, "Unknown error", data)
 
 Request = namedtuple("Request", ["method", "params", "id"], defaults=[{}, None])
+Response = namedtuple("Response", ["id", "result", "error"], defaults=[None, {}, {}])
 Method = namedtuple("Method", ["callback", "signature", "immediate", "sensitive_params"])
 
 
@@ -79,7 +80,7 @@ def anonymise_sensitive_params(params, sensitive_params):
 
     return params
 
-class Server():
+class Connection():
     def __init__(self, reader, writer, encoder=json.JSONEncoder()):
         self._active = True
         self._reader = StreamLineReader(reader)
@@ -89,6 +90,8 @@ class Server():
         self._notifications = {}
         self._task_manager = TaskManager("jsonrpc server")
         self._write_lock = asyncio.Lock()
+        self._last_request_id = 0
+        self._requests_futures = {}
 
     def register_method(self, name, callback, immediate, sensitive_params=False):
         """
@@ -113,6 +116,47 @@ class Server():
             if False - no params are considered sensitive, if True - all params are considered sensitive
         """
         self._notifications[name] = Method(callback, inspect.signature(callback), immediate, sensitive_params)
+
+    async def send_request(self, method, params, sensitive_params):
+        """
+        Send request
+
+        :param method:
+        :param params:
+        :param sensitive_params: list of parameters that are anonymized before logging; \
+            if False - no params are considered sensitive, if True - all params are considered sensitive
+        """
+        self._last_request_id += 1
+        request_id = str(self._last_request_id)
+
+        loop = asyncio.get_running_loop()
+        future = loop.create_future()
+        self._requests_futures[self._last_request_id] = (future, sensitive_params)
+
+        logging.info(
+            "Sending request: id=%s, method=%s, params=%s",
+            request_id, method, anonymise_sensitive_params(params, sensitive_params)
+        )
+
+        self._send_request(request_id, method, params)
+        return await future
+
+    def send_notification(self, method, params, sensitive_params=False):
+        """
+        Send notification
+
+        :param method:
+        :param params:
+        :param sensitive_params: list of parameters that are anonymized before logging; \
+            if False - no params are considered sensitive, if True - all params are considered sensitive
+        """
+
+        logging.info(
+            "Sending notification: method=%s, params=%s",
+            method, anonymise_sensitive_params(params, sensitive_params)
+        )
+
+        self._send_notification(method, params)
 
     async def run(self):
         while self._active:
@@ -143,15 +187,40 @@ class Server():
 
     def _handle_input(self, data):
         try:
-            request = self._parse_request(data)
+            message = self._parse_message(data)
         except JsonRpcError as error:
             self._send_error(None, error)
             return
 
-        if request.id is not None:
-            self._handle_request(request)
-        else:
-            self._handle_notification(request)
+        if isinstance(message, Request):
+            if message.id is not None:
+                self._handle_request(message)
+            else:
+                self._handle_notification(message)
+        elif isinstance(message, Response):
+            self._handle_response(message)
+
+    def _handle_response(self, response):
+        request_future = self._requests_futures.get(int(response.id))
+        if request_future is None:
+            response_type = "response" if response.result is not None else "error"
+            logging.warning("Received %s for unknown request: %s", response_type, response.id)
+            return
+
+        future, sensitive_params = request_future
+
+        if response.error:
+            error = JsonRpcError(
+                response.error.setdefault("code", 0),
+                response.error.setdefault("message", ""),
+                response.error.setdefault("data", None)
+            )
+            self._log_error(response, error, sensitive_params)
+            future.set_exception(error)
+            return
+
+        self._log_response(response, sensitive_params)
+        future.set_result(response.result)
 
     def _handle_notification(self, request):
         method = self._notifications.get(request.method)
@@ -211,13 +280,17 @@ class Server():
             self._task_manager.create_task(handle(), request.method)
 
     @staticmethod
-    def _parse_request(data):
+    def _parse_message(data):
         try:
-            jsonrpc_request = json.loads(data, encoding="utf-8")
-            if jsonrpc_request.get("jsonrpc") != "2.0":
+            jsonrpc_message = json.loads(data, encoding="utf-8")
+            if jsonrpc_message.get("jsonrpc") != "2.0":
                 raise InvalidRequest()
-            del jsonrpc_request["jsonrpc"]
-            return Request(**jsonrpc_request)
+            del jsonrpc_message["jsonrpc"]
+            if "result" in jsonrpc_message.keys() or "error" in jsonrpc_message.keys():
+                return Response(**jsonrpc_message)
+            else:
+                return Request(**jsonrpc_message)
+
         except json.JSONDecodeError:
             raise ParseError()
         except TypeError:
@@ -254,6 +327,23 @@ class Server():
 
         self._send(response)
 
+    def _send_request(self, request_id, method, params):
+        request = {
+            "jsonrpc": "2.0",
+            "method": method,
+            "id": request_id,
+            "params": params
+        }
+        self._send(request)
+
+    def _send_notification(self, method, params):
+        notification = {
+            "jsonrpc": "2.0",
+            "method": method,
+            "params": params
+        }
+        self._send(notification)
+
     @staticmethod
     def _log_request(request, sensitive_params):
         params = anonymise_sensitive_params(request.params, sensitive_params)
@@ -262,50 +352,14 @@ class Server():
         else:
             logging.info("Handling notification: method=%s, params=%s", request.method, params)
 
-class NotificationClient():
-    def __init__(self, writer, encoder=json.JSONEncoder()):
-        self._writer = writer
-        self._encoder = encoder
-        self._methods = {}
-        self._task_manager = TaskManager("notification client")
-        self._write_lock = asyncio.Lock()
-
-    def notify(self, method, params, sensitive_params=False):
-        """
-        Send notification
-
-        :param method:
-        :param params:
-        :param sensitive_params: list of parameters that are anonymized before logging; \
-            if False - no params are considered sensitive, if True - all params are considered sensitive
-        """
-        notification = {
-            "jsonrpc": "2.0",
-            "method": method,
-            "params": params
-        }
-        self._log(method, params, sensitive_params)
-        self._send(notification)
-
-    async def close(self):
-        self._task_manager.cancel()
-        await self._task_manager.wait()
-
-    def _send(self, data):
-        async def send_task(data_):
-            async with self._write_lock:
-                self._writer.write(data_)
-                await self._writer.drain()
-
-        try:
-            line = self._encoder.encode(data)
-            data = (line + "\n").encode("utf-8")
-            logging.debug("Sending %d byte of data", len(data))
-            self._task_manager.create_task(send_task(data), "send")
-        except TypeError as error:
-            logging.error("Failed to parse outgoing message: %s", str(error))
+    @staticmethod
+    def _log_response(response, sensitive_params):
+        result = anonymise_sensitive_params(response.result, sensitive_params)
+        logging.info("Handling response: id=%s, result=%s", response.id, result)
 
     @staticmethod
-    def _log(method, params, sensitive_params):
-        params = anonymise_sensitive_params(params, sensitive_params)
-        logging.info("Sending notification: method=%s, params=%s", method, params)
+    def _log_error(response, error, sensitive_params):
+        data = anonymise_sensitive_params(error.data, sensitive_params)
+        logging.info("Handling error: id=%s, code=%s, description=%s, data=%s",
+            response.id, error.code, error.message, data
+        )
