@@ -33,7 +33,6 @@ if sys.platform == "win32":
     ERROR_SUCCESS = 0x00000000
 
     KEY_READ = 0x00020019
-    KEY_QUERY_VALUE = 0x00000001
 
     REG_NOTIFY_CHANGE_NAME = 0x00000001
     REG_NOTIFY_CHANGE_LAST_SET = 0x00000004
@@ -43,9 +42,10 @@ if sys.platform == "win32":
 
 class RegistryMonitor:
 
-    def __init__(self, root, subkey):
+    def __init__(self, root, subkey, access=KEY_READ):
         self._root = root
         self._subkey = subkey
+        self._access = access
         self._event = CreateEvent(None, False, False, None)
 
         self._key = None
@@ -91,8 +91,7 @@ class RegistryMonitor:
             self._key = None
 
     def _open_key(self):
-        access = KEY_QUERY_VALUE | KEY_READ
         self._key = HKEY()
-        rc = RegOpenKeyEx(self._root, self._subkey, 0, access, ctypes.byref(self._key))
+        rc = RegOpenKeyEx(self._root, self._subkey, 0, self._access, ctypes.byref(self._key))
         if rc != ERROR_SUCCESS:
             self._key = None
