@@ -1,5 +1,5 @@
 -e .
-pytest==4.2.0
+pytest==5.2.2
 pytest-asyncio==0.10.0
 pytest-mock==1.10.3
 pytest-mypy==0.4.1

@@ -1,12 +1,13 @@
-from contextlib import ExitStack
 import logging
-from unittest.mock import patch, MagicMock
+from contextlib import ExitStack
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from galaxy.api.plugin import Plugin
 from galaxy.api.consts import Platform
+from galaxy.api.plugin import Plugin
 from galaxy.unittest.mock import async_return_value
+
 
 @pytest.fixture()
 def reader():
@@ -14,19 +15,23 @@ def reader():
     stream.read = MagicMock()
     yield stream
 
+
 @pytest.fixture()
 async def writer():
     stream = MagicMock(name="stream_writer")
     stream.drain.side_effect = lambda: async_return_value(None)
     yield stream
 
+
 @pytest.fixture()
 def read(reader):
     yield reader.read
 
+
 @pytest.fixture()
 def write(writer):
     yield writer.write
+
 
 @pytest.fixture()
 async def plugin(reader, writer):
@@ -56,6 +61,9 @@ async def plugin(reader, writer):
         "get_os_compatibility",
         "prepare_os_compatibility_context",
         "os_compatibility_import_complete",
+        "get_user_presence",
+        "prepare_user_presence_context",
+        "user_presence_import_complete",
     )
 
     with ExitStack() as stack:

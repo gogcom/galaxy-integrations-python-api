@@ -113,6 +113,7 @@ class Feature(Enum):
     LaunchPlatformClient = "LaunchPlatformClient"
     ImportGameLibrarySettings = "ImportGameLibrarySettings"
     ImportOSCompatibility = "ImportOSCompatibility"
+    ImportUserPresence = "ImportUserPresence"
 
 
 class LicenseType(Enum):
@@ -140,3 +141,11 @@ class OSCompatibility(Flag):
     Windows = 0b001
     MacOS   = 0b010
     Linux   = 0b100
+
+
+class PresenceState(Enum):
+    """"Possible states of a user."""
+    Unknown = "unknown"
+    Online = "online"
+    Offline = "offline"
+    Away = "away"

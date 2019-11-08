@@ -12,7 +12,7 @@ class StreamLineReader:
         while True:
             # check if there is no unprocessed data in the buffer
             if not self._buffer or self._processed_buffer_it != 0:
-                chunk = await self._reader.read(1024)
+                chunk = await self._reader.read(1024*1024)
                 if not chunk:
                     return bytes() # EOF
                 self._buffer += chunk

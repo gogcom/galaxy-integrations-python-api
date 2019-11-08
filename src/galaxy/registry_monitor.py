@@ -1,4 +1,6 @@
 import sys
+
+
 if sys.platform == "win32":
     import logging
     import ctypes
@@ -76,11 +78,10 @@ class RegistryMonitor:
         if self._key is None:
             self._open_key()
 
-        if self._key is None:
-            return False
+        if self._key is not None:
+            self._set_key_update_notification()
 
-        self._set_key_update_notification()
-        return True
+        return False
 
     def _set_key_update_notification(self):
         filter_ = REG_NOTIFY_CHANGE_NAME | REG_NOTIFY_CHANGE_LAST_SET

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
-from galaxy.api.consts import LicenseType, LocalGameState
+from galaxy.api.consts import LicenseType, LocalGameState, PresenceState
 
 
 @dataclass
@@ -140,7 +140,10 @@ class LocalGame:
 
 @dataclass
 class FriendInfo:
-    """Information about a friend of the currently authenticated user.
+    """
+    .. deprecated:: 0.56
+    Use: :class:`UserInfo`.
+    Information about a friend of the currently authenticated user.
 
     :param user_id: id of the user
     :param user_name: username of the user
@@ -148,6 +151,16 @@ class FriendInfo:
     user_id: str
     user_name: str
 
+
+@dataclass
+class UserInfo:
+    """Information about a user of related user.
+
+    :param user_id: id of the user
+    :param user_name: username of the user
+    """
+    user_id: str
+    user_name: str
 
 @dataclass
 class GameTime:
@@ -174,3 +187,18 @@ class GameLibrarySettings:
     game_id: str
     tags: Optional[List[str]]
     hidden: Optional[bool]
+
+
+@dataclass
+class UserPresence:
+    """Presence information of a user.
+
+    :param presence_state: the state of the user
+    :param game_id: id of the game a user is currently in
+    :param game_title: name of the game a user is currently in
+    :param presence_status: detailed user's presence description
+    """
+    presence_state: PresenceState
+    game_id: Optional[str] = None
+    game_title: Optional[str] = None
+    presence_status: Optional[str] = None
