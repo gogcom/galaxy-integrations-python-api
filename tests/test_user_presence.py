@@ -5,7 +5,7 @@ import pytest
 from galaxy.api.consts import PresenceState
 from galaxy.api.errors import BackendError
 from galaxy.api.types import UserPresence
-from galaxy.unittest.mock import async_return_value
+from galaxy.unittest.mock import async_return_value, skip_loop
 from tests import create_message, get_messages
 
 
@@ -229,3 +229,25 @@ async def test_import_already_in_progress_error(plugin, read, write):
              "message": "Import already in progress"
          }
     } in responses
+
+
+@pytest.mark.asyncio
+async def test_update_user_presence(plugin, write):
+    plugin.update_user_presence("42", UserPresence(PresenceState.Online, "game-id", "game-title", "Pew pew"))
+    await skip_loop()
+
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "method": "user_presence_updated",
+            "params": {
+                "user_id": "42",
+                "presence": {
+                    "presence_state": PresenceState.Online.value,
+                    "game_id": "game-id",
+                    "game_title": "game-title",
+                    "presence_status": "Pew pew"
+                }
+            }
+        }
+    ]

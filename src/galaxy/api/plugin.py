@@ -397,6 +397,13 @@ class Plugin:
         params = {"user_id": user_id}
         self._connection.send_notification("friend_removed", params)
 
+    def update_friend_info(self, user: UserInfo) -> None:
+        """Notify the client about the updated friend information.
+
+        :param user: UserInfo of a friend whose info was updated
+        """
+        self._connection.send_notification("friend_updated", params={"friend_info": user})
+
     def update_game_time(self, game_time: GameTime) -> None:
         """Notify the client to update game time for a game.
 
@@ -404,6 +411,20 @@ class Plugin:
         """
         params = {"game_time": game_time}
         self._connection.send_notification("game_time_updated", params)
+
+    def update_user_presence(self, user_id: str, user_presence: UserPresence) -> None:
+        """Notify the client about the updated user presence information.
+
+        :param user_id: the id of the user whose presence information is updated
+        :param user_presence: presence information of the specified user
+        """
+        self._connection.send_notification(
+            "user_presence_updated",
+            {
+                "user_id": user_id,
+                "presence": user_presence
+            }
+        )
 
     def _game_time_import_success(self, game_time: GameTime) -> None:
         params = {"game_time": game_time}

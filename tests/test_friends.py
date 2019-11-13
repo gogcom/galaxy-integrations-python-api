@@ -99,3 +99,26 @@ async def test_remove_friend(plugin, write):
             }
         }
     ]
+
+
+@pytest.mark.asyncio
+async def test_update_friend_info(plugin, write):
+    plugin.update_friend_info(
+        UserInfo("7", "Jakub", avatar_url="https://new-avatar.url/kuba2.jpg", profile_url="https://profile.url/kuba")
+    )
+    await skip_loop()
+
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "method": "friend_updated",
+            "params": {
+                "friend_info": {
+                    "user_id": "7",
+                    "user_name": "Jakub",
+                    "avatar_url": "https://new-avatar.url/kuba2.jpg",
+                    "profile_url": "https://profile.url/kuba"
+                }
+            }
+        }
+    ]
