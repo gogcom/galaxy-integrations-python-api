@@ -17,8 +17,8 @@ async def test_get_friends_success(plugin, read, write):
 
     read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
     plugin.get_friends.return_value = async_return_value([
-        UserInfo("3", "Jan"),
-        UserInfo("5", "Ola")
+        UserInfo("3", "Jan", "https://avatar.url/u3", None),
+        UserInfo("5", "Ola", None, "https://profile.url/u5")
     ])
     await plugin.run()
     plugin.get_friends.assert_called_with()
@@ -29,8 +29,8 @@ async def test_get_friends_success(plugin, read, write):
             "id": "3",
             "result": {
                 "friend_info_list": [
-                    {"user_id": "3", "user_name": "Jan"},
-                    {"user_id": "5", "user_name": "Ola"}
+                    {"user_id": "3", "user_name": "Jan", "avatar_url": "https://avatar.url/u3"},
+                    {"user_id": "5", "user_name": "Ola", "profile_url": "https://profile.url/u5"}
                 ]
             }
         }
@@ -64,7 +64,7 @@ async def test_get_friends_failure(plugin, read, write):
 
 @pytest.mark.asyncio
 async def test_add_friend(plugin, write):
-    friend = UserInfo("7", "Kuba")
+    friend = UserInfo("7", "Kuba", avatar_url="https://avatar.url/kuba.jpg", profile_url="https://profile.url/kuba")
 
     plugin.add_friend(friend)
     await skip_loop()
@@ -74,7 +74,12 @@ async def test_add_friend(plugin, write):
             "jsonrpc": "2.0",
             "method": "friend_added",
             "params": {
-                "friend_info": {"user_id": "7", "user_name": "Kuba"}
+                "friend_info": {
+                    "user_id": "7",
+                    "user_name": "Kuba",
+                    "avatar_url": "https://avatar.url/kuba.jpg",
+                    "profile_url": "https://profile.url/kuba"
+                }
             }
         }
     ]

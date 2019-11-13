@@ -61,9 +61,11 @@ class NextStep:
             if not stored_credentials:
                 return NextStep("web_session", PARAMS, cookies=COOKIES, js=JS)
 
-    :param auth_params: configuration options: {"window_title": :class:`str`, "window_width": :class:`str`, "window_height": :class:`int`, "start_uri": :class:`int`, "end_uri_regex": :class:`str`}
+    :param auth_params: configuration options: {"window_title": :class:`str`, "window_width": :class:`str`,
+     "window_height": :class:`int`, "start_uri": :class:`int`, "end_uri_regex": :class:`str`}
     :param cookies: browser initial set of cookies
-    :param js: a map of the url regex patterns into the list of *js* scripts that should be executed on every document at given step of internal browser authentication.
+    :param js: a map of the url regex patterns into the list of *js* scripts that should be executed
+     on every document at given step of internal browser authentication.
     """
     next_step: str
     auth_params: Dict[str, str]
@@ -158,9 +160,14 @@ class UserInfo:
 
     :param user_id: id of the user
     :param user_name: username of the user
+    :param avatar_url: the URL of the user avatar
+    :param profile_url: the URL of the user profile
     """
     user_id: str
     user_name: str
+    avatar_url: Optional[str]
+    profile_url: Optional[str]
+
 
 @dataclass
 class GameTime:
