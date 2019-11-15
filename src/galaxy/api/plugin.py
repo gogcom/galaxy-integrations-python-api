@@ -200,7 +200,14 @@ class Plugin:
         logger.info("Closing plugin")
         self._connection.close()
         self._external_task_manager.cancel()
-        self._internal_task_manager.create_task(self.shutdown(), "shutdown")
+
+        async def shutdown():
+            try:
+                await asyncio.wait_for(self.shutdown(), 30)
+            except asyncio.TimeoutError:
+                logging.warning("Plugin shutdown timed out")
+
+        self._internal_task_manager.create_task(shutdown(), "shutdown")
         self._active = False
 
     async def wait_closed(self) -> None:
