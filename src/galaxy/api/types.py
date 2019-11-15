@@ -144,7 +144,8 @@ class LocalGame:
 class FriendInfo:
     """
     .. deprecated:: 0.56
-    Use: :class:`UserInfo`.
+      Use :class:`UserInfo`.
+
     Information about a friend of the currently authenticated user.
 
     :param user_id: id of the user
@@ -189,7 +190,7 @@ class GameLibrarySettings:
 
     :param game_id: id of the related game
     :param tags: collection of tags assigned to the game
-    :param hidden: indicates if the game should be hidden in GOG Galaxy application
+    :param hidden: indicates if the game should be hidden in GOG Galaxy client
     """
     game_id: str
     tags: Optional[List[str]]
@@ -200,12 +201,18 @@ class GameLibrarySettings:
 class UserPresence:
     """Presence information of a user.
 
+    The GOG Galaxy client will prefer to generate user status basing on `game_id` (or `game_title`)
+    and `in_game_status` fields but if plugin is not capable of delivering it then the `full_status` will be used if
+    available
+
     :param presence_state: the state of the user
     :param game_id: id of the game a user is currently in
     :param game_title: name of the game a user is currently in
-    :param presence_status: detailed user's presence description
+    :param in_game_status: status set by the game itself e.x. "In Main Menu"
+    :param full_status: full user status e.x. "Playing <title_name>: <in_game_status>"
     """
     presence_state: PresenceState
     game_id: Optional[str] = None
     game_title: Optional[str] = None
-    presence_status: Optional[str] = None
+    in_game_status: Optional[str] = None
+    full_status: Optional[str] = None

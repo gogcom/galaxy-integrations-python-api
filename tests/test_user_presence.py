@@ -12,7 +12,7 @@ from tests import create_message, get_messages
 @pytest.mark.asyncio
 async def test_get_user_presence_success(plugin, read, write):
     context = "abc"
-    user_ids = ["666", "13", "42", "69"]
+    user_ids = ["666", "13", "42", "69", "22"]
     plugin.prepare_user_presence_context.return_value = async_return_value(context)
     request = {
         "jsonrpc": "2.0",
@@ -26,25 +26,36 @@ async def test_get_user_presence_success(plugin, read, write):
             PresenceState.Unknown,
             "game-id1",
             None,
-            "unknown state"
+            "unknown state",
+            None
         )),
         async_return_value(UserPresence(
             PresenceState.Offline,
             None,
             None,
-            "Going to grandma's house"
+            "Going to grandma's house",
+            None
         )),
         async_return_value(UserPresence(
             PresenceState.Online,
             "game-id3",
             "game-title3",
-            "Pew pew"
+            "Pew pew",
+            None
         )),
         async_return_value(UserPresence(
             PresenceState.Away,
             None,
             "game-title4",
-            "AFKKTHXBY"
+            "AFKKTHXBY",
+            None
+        )),
+        async_return_value(UserPresence(
+            PresenceState.Away,
+            None,
+            "game-title5",
+            None,
+            "Playing game-title5: In Menu"
         )),
     ]
     await plugin.run()
@@ -67,7 +78,7 @@ async def test_get_user_presence_success(plugin, read, write):
                 "presence": {
                     "presence_state": PresenceState.Unknown.value,
                     "game_id": "game-id1",
-                    "presence_status": "unknown state"
+                    "in_game_status": "unknown state"
                 }
             }
         },
@@ -78,7 +89,7 @@ async def test_get_user_presence_success(plugin, read, write):
                 "user_id": "13",
                 "presence": {
                     "presence_state": PresenceState.Offline.value,
-                    "presence_status": "Going to grandma's house"
+                    "in_game_status": "Going to grandma's house"
                 }
             }
         },
@@ -91,7 +102,7 @@ async def test_get_user_presence_success(plugin, read, write):
                     "presence_state": PresenceState.Online.value,
                     "game_id": "game-id3",
                     "game_title": "game-title3",
-                    "presence_status": "Pew pew"
+                    "in_game_status": "Pew pew"
                 }
             }
         },
@@ -103,7 +114,19 @@ async def test_get_user_presence_success(plugin, read, write):
                 "presence": {
                     "presence_state": PresenceState.Away.value,
                     "game_title": "game-title4",
-                    "presence_status": "AFKKTHXBY"
+                    "in_game_status": "AFKKTHXBY"
+                }
+            }
+        },
+        {
+            "jsonrpc": "2.0",
+            "method": "user_presence_import_success",
+            "params": {
+                "user_id": "22",
+                "presence": {
+                    "presence_state": PresenceState.Away.value,
+                    "game_title": "game-title5",
+                    "full_status": "Playing game-title5: In Menu"
                 }
             }
         },
@@ -246,7 +269,7 @@ async def test_update_user_presence(plugin, write):
                     "presence_state": PresenceState.Online.value,
                     "game_id": "game-id",
                     "game_title": "game-title",
-                    "presence_status": "Pew pew"
+                    "in_game_status": "Pew pew"
                 }
             }
         }

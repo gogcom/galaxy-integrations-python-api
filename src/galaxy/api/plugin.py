@@ -578,10 +578,11 @@ class Plugin:
 
     async def pass_login_credentials(self, step: str, credentials: Dict[str, str], cookies: List[Dict[str, str]]) \
         -> Union[NextStep, Authentication]:
-        """This method is called if we return galaxy.api.types.NextStep from authenticate or from pass_login_credentials.
+        """This method is called if we return :class:`~galaxy.api.types.NextStep` from :meth:`.authenticate`
+        or :meth:`.pass_login_credentials`.
         This method's parameters provide the data extracted from the web page navigation that previous NextStep finished on.
-        This method should either return galaxy.api.types.Authentication if the authentication is finished
-        or galaxy.api.types.NextStep if it requires going to another cef url.
+        This method should either return :class:`~galaxy.api.types.Authentication` if the authentication is finished
+        or :class:`~galaxy.api.types.NextStep` if it requires going to another cef url.
         This method is called by the GOG Galaxy Client.
 
         :param step: deprecated.
