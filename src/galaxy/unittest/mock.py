@@ -21,11 +21,19 @@ def coroutine_mock():
     corofunc.coro = coro
     return corofunc
 
+
 async def skip_loop(iterations=1):
     for _ in range(iterations):
         await asyncio.sleep(0)
 
 
 async def async_return_value(return_value, loop_iterations_delay=0):
-    await skip_loop(loop_iterations_delay)
+    if loop_iterations_delay > 0:
+        await skip_loop(loop_iterations_delay)
     return return_value
+
+
+async def async_raise(error, loop_iterations_delay=0):
+    if loop_iterations_delay > 0:
+        await skip_loop(loop_iterations_delay)
+    raise error
