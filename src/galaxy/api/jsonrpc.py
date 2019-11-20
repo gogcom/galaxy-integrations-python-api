@@ -304,8 +304,8 @@ class Connection():
 
         try:
             line = self._encoder.encode(data)
-            logging.debug("Sending data: %s", line)
             data = (line + "\n").encode("utf-8")
+            logging.debug("Sending %d byte of data", len(data))
             self._task_manager.create_task(send_task(data), "send")
         except TypeError as error:
             logging.error(str(error))
