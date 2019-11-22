@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Iterable, NewType, Optional, List, cast
 
 
-
 ProcessId = NewType("ProcessId", int)
 
 

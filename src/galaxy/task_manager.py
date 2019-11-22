@@ -3,6 +3,10 @@ import logging
 from collections import OrderedDict
 from itertools import count
 
+
+logger = logging.getLogger(__name__)
+
+
 class TaskManager:
     def __init__(self, name):
         self._name = name
@@ -15,23 +19,23 @@ class TaskManager:
         async def task_wrapper(task_id):
             try:
                 result = await coro
-                logging.debug("Task manager %s: finished task %d (%s)", self._name, task_id, description)
+                logger.debug("Task manager %s: finished task %d (%s)", self._name, task_id, description)
                 return result
             except asyncio.CancelledError:
                 if handle_exceptions:
-                    logging.debug("Task manager %s: canceled task %d (%s)", self._name, task_id, description)
+                    logger.debug("Task manager %s: canceled task %d (%s)", self._name, task_id, description)
                 else:
                     raise
             except Exception:
                 if handle_exceptions:
-                    logging.exception("Task manager %s: exception raised in task %d (%s)", self._name, task_id, description)
+                    logger.exception("Task manager %s: exception raised in task %d (%s)", self._name, task_id, description)
                 else:
                     raise
             finally:
                 del self._tasks[task_id]
 
         task_id = next(self._task_counter)
-        logging.debug("Task manager %s: creating task %d (%s)", self._name, task_id, description)
+        logger.debug("Task manager %s: creating task %d (%s)", self._name, task_id, description)
         task = asyncio.create_task(task_wrapper(task_id))
         self._tasks[task_id] = task
         return task

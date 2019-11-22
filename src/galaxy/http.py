@@ -44,6 +44,8 @@ from galaxy.api.errors import (
 )
 
 
+logger = logging.getLogger(__name__)
+
 #: Default limit of the simultaneous connections for ssl connector.
 DEFAULT_LIMIT = 20
 #: Default timeout in seconds used for client session.
@@ -136,11 +138,11 @@ def handle_exception():
         if error.status >= 500:
             raise BackendError()
         if error.status >= 400:
-            logging.warning(
+            logger.warning(
                 "Got status %d while performing %s request for %s",
                 error.status, error.request_info.method, str(error.request_info.url)
             )
             raise UnknownError()
     except aiohttp.ClientError:
-        logging.exception("Caught exception while performing request")
+        logger.exception("Caught exception while performing request")
         raise UnknownError()

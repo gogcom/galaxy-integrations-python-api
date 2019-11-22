@@ -2,7 +2,6 @@ import asyncio
 import dataclasses
 import json
 import logging
-import logging.handlers
 import sys
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set, Union
@@ -14,6 +13,9 @@ from galaxy.api.types import (
     Achievement, Authentication, Game, GameLibrarySettings, GameTime, LocalGame, NextStep, UserInfo, UserPresence
 )
 from galaxy.task_manager import TaskManager
+
+
+logger = logging.getLogger(__name__)
 
 
 class JSONEncoder(json.JSONEncoder):
@@ -33,7 +35,7 @@ class Plugin:
     """Use and override methods of this class to create a new platform integration."""
 
     def __init__(self, platform, version, reader, writer, handshake_token):
-        logging.info("Creating plugin for platform %s, version %s", platform.value, version)
+        logger.info("Creating plugin for platform %s, version %s", platform.value, version)
         self._platform = platform
         self._version = version
 
@@ -189,24 +191,24 @@ class Plugin:
     async def run(self):
         """Plugin's main coroutine."""
         await self._connection.run()
-        logging.debug("Plugin run loop finished")
+        logger.debug("Plugin run loop finished")
 
     def close(self) -> None:
         if not self._active:
             return
 
-        logging.info("Closing plugin")
+        logger.info("Closing plugin")
         self._connection.close()
         self._external_task_manager.cancel()
         self._internal_task_manager.create_task(self.shutdown(), "shutdown")
         self._active = False
 
     async def wait_closed(self) -> None:
-        logging.debug("Waiting for plugin to close")
+        logger.debug("Waiting for plugin to close")
         await self._external_task_manager.wait()
         await self._internal_task_manager.wait()
         await self._connection.wait_closed()
-        logging.debug("Plugin closed")
+        logger.debug("Plugin closed")
 
     def create_task(self, coro, description):
         """Wrapper around asyncio.create_task - takes care of canceling tasks on shutdown"""
@@ -217,11 +219,11 @@ class Plugin:
             try:
                 self.tick()
             except Exception:
-                logging.exception("Unexpected exception raised in plugin tick")
+                logger.exception("Unexpected exception raised in plugin tick")
             await asyncio.sleep(1)
 
     async def _shutdown(self):
-        logging.info("Shutting down")
+        logger.info("Shutting down")
         self.close()
         await self._external_task_manager.wait()
         await self._internal_task_manager.wait()
@@ -238,7 +240,7 @@ class Plugin:
         try:
             self.handshake_complete()
         except Exception:
-            logging.exception("Unhandled exception during `handshake_complete` step")
+            logger.exception("Unhandled exception during `handshake_complete` step")
         self._internal_task_manager.create_task(self._pass_control(), "tick")
 
     @staticmethod
@@ -639,7 +641,7 @@ class Plugin:
             except ApplicationError as error:
                 self._game_achievements_import_failure(game_id, error)
             except Exception:
-                logging.exception("Unexpected exception raised in import_game_achievements")
+                logger.exception("Unexpected exception raised in import_game_achievements")
                 self._game_achievements_import_failure(game_id, UnknownError())
 
         async def import_games_achievements(game_ids_, context_):
@@ -803,7 +805,7 @@ class Plugin:
             except ApplicationError as error:
                 self._game_time_import_failure(game_id, error)
             except Exception:
-                logging.exception("Unexpected exception raised in import_game_time")
+                logger.exception("Unexpected exception raised in import_game_time")
                 self._game_time_import_failure(game_id, UnknownError())
 
         async def import_game_times(game_ids_, context_):
@@ -861,7 +863,7 @@ class Plugin:
             except ApplicationError as error:
                 self._game_library_settings_import_failure(game_id, error)
             except Exception:
-                logging.exception("Unexpected exception raised in import_game_library_settings")
+                logger.exception("Unexpected exception raised in import_game_library_settings")
                 self._game_library_settings_import_failure(game_id, UnknownError())
 
         async def import_game_library_settings_set(game_ids_, context_):
@@ -919,7 +921,7 @@ class Plugin:
             except ApplicationError as error:
                 self._os_compatibility_import_failure(game_id, error)
             except Exception:
-                logging.exception("Unexpected exception raised in import_os_compatibility")
+                logger.exception("Unexpected exception raised in import_os_compatibility")
                 self._os_compatibility_import_failure(game_id, UnknownError())
 
         async def import_os_compatibility_set(game_ids_, context_):
@@ -974,7 +976,7 @@ class Plugin:
             except ApplicationError as error:
                 self._user_presence_import_failure(user_id, error)
             except Exception:
-                logging.exception("Unexpected exception raised in import_user_presence")
+                logger.exception("Unexpected exception raised in import_user_presence")
                 self._user_presence_import_failure(user_id, UnknownError())
 
         async def import_user_presence_set(user_ids_, context_) -> None:
@@ -1037,7 +1039,7 @@ def create_and_run_plugin(plugin_class, argv):
                 main()
     """
     if len(argv) < 3:
-        logging.critical("Not enough parameters, required: token, port")
+        logger.critical("Not enough parameters, required: token, port")
         sys.exit(1)
 
     token = argv[1]
@@ -1045,21 +1047,21 @@ def create_and_run_plugin(plugin_class, argv):
     try:
         port = int(argv[2])
     except ValueError:
-        logging.critical("Failed to parse port value: %s", argv[2])
+        logger.critical("Failed to parse port value: %s", argv[2])
         sys.exit(2)
 
     if not (1 <= port <= 65535):
-        logging.critical("Port value out of range (1, 65535)")
+        logger.critical("Port value out of range (1, 65535)")
         sys.exit(3)
 
     if not issubclass(plugin_class, Plugin):
-        logging.critical("plugin_class must be subclass of Plugin")
+        logger.critical("plugin_class must be subclass of Plugin")
         sys.exit(4)
 
     async def coroutine():
         reader, writer = await asyncio.open_connection("127.0.0.1", port)
         extra_info = writer.get_extra_info("sockname")
-        logging.info("Using local address: %s:%u", *extra_info)
+        logger.info("Using local address: %s:%u", *extra_info)
         async with plugin_class(reader, writer, token) as plugin:
             await plugin.run()
 
@@ -1069,5 +1071,5 @@ def create_and_run_plugin(plugin_class, argv):
 
         asyncio.run(coroutine())
     except Exception:
-        logging.exception("Error while running plugin")
+        logger.exception("Error while running plugin")
         sys.exit(5)

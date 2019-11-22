@@ -8,6 +8,10 @@ import json
 from galaxy.reader import StreamLineReader
 from galaxy.task_manager import TaskManager
 
+
+logger = logging.getLogger(__name__)
+
+
 class JsonRpcError(Exception):
     def __init__(self, code, message, data=None):
         self.code = code
@@ -133,7 +137,7 @@ class Connection():
         future = loop.create_future()
         self._requests_futures[self._last_request_id] = (future, sensitive_params)
 
-        logging.info(
+        logger.info(
             "Sending request: id=%s, method=%s, params=%s",
             request_id, method, anonymise_sensitive_params(params, sensitive_params)
         )
@@ -151,7 +155,7 @@ class Connection():
             if False - no params are considered sensitive, if True - all params are considered sensitive
         """
 
-        logging.info(
+        logger.info(
             "Sending notification: method=%s, params=%s",
             method, anonymise_sensitive_params(params, sensitive_params)
         )
@@ -169,20 +173,20 @@ class Connection():
                 self._eof()
                 continue
             data = data.strip()
-            logging.debug("Received %d bytes of data", len(data))
+            logger.debug("Received %d bytes of data", len(data))
             self._handle_input(data)
             await asyncio.sleep(0) # To not starve task queue
 
     def close(self):
         if self._active:
-            logging.info("Closing JSON-RPC server - not more messages will be read")
+            logger.info("Closing JSON-RPC server - not more messages will be read")
             self._active = False
 
     async def wait_closed(self):
         await self._task_manager.wait()
 
     def _eof(self):
-        logging.info("Received EOF")
+        logger.info("Received EOF")
         self.close()
 
     def _handle_input(self, data):
@@ -204,7 +208,7 @@ class Connection():
         request_future = self._requests_futures.get(int(response.id))
         if request_future is None:
             response_type = "response" if response.result is not None else "error"
-            logging.warning("Received %s for unknown request: %s", response_type, response.id)
+            logger.warning("Received %s for unknown request: %s", response_type, response.id)
             return
 
         future, sensitive_params = request_future
@@ -225,7 +229,7 @@ class Connection():
     def _handle_notification(self, request):
         method = self._notifications.get(request.method)
         if not method:
-            logging.error("Received unknown notification: %s", request.method)
+            logger.error("Received unknown notification: %s", request.method)
             return
 
         callback, signature, immediate, sensitive_params = method
@@ -242,12 +246,12 @@ class Connection():
             try:
                 self._task_manager.create_task(callback(*bound_args.args, **bound_args.kwargs), request.method)
             except Exception:
-                logging.exception("Unexpected exception raised in notification handler")
+                logger.exception("Unexpected exception raised in notification handler")
 
     def _handle_request(self, request):
         method = self._methods.get(request.method)
         if not method:
-            logging.error("Received unknown request: %s", request.method)
+            logger.error("Received unknown request: %s", request.method)
             self._send_error(request.id, MethodNotFound())
             return
 
@@ -274,7 +278,7 @@ class Connection():
                 except asyncio.CancelledError:
                     self._send_error(request.id, Aborted())
                 except Exception as e:  #pylint: disable=broad-except
-                    logging.exception("Unexpected exception raised in plugin handler")
+                    logger.exception("Unexpected exception raised in plugin handler")
                     self._send_error(request.id, UnknownError(str(e)))
 
             self._task_manager.create_task(handle(), request.method)
@@ -305,10 +309,10 @@ class Connection():
         try:
             line = self._encoder.encode(data)
             data = (line + "\n").encode("utf-8")
-            logging.debug("Sending %d byte of data", len(data))
+            logger.debug("Sending %d byte of data", len(data))
             self._task_manager.create_task(send_task(data), "send")
         except TypeError as error:
-            logging.error(str(error))
+            logger.error(str(error))
 
     def _send_response(self, request_id, result):
         response = {
@@ -348,18 +352,18 @@ class Connection():
     def _log_request(request, sensitive_params):
         params = anonymise_sensitive_params(request.params, sensitive_params)
         if request.id is not None:
-            logging.info("Handling request: id=%s, method=%s, params=%s", request.id, request.method, params)
+            logger.info("Handling request: id=%s, method=%s, params=%s", request.id, request.method, params)
         else:
-            logging.info("Handling notification: method=%s, params=%s", request.method, params)
+            logger.info("Handling notification: method=%s, params=%s", request.method, params)
 
     @staticmethod
     def _log_response(response, sensitive_params):
         result = anonymise_sensitive_params(response.result, sensitive_params)
-        logging.info("Handling response: id=%s, result=%s", response.id, result)
+        logger.info("Handling response: id=%s, result=%s", response.id, result)
 
     @staticmethod
     def _log_error(response, error, sensitive_params):
         data = anonymise_sensitive_params(error.data, sensitive_params)
-        logging.info("Handling error: id=%s, code=%s, description=%s, data=%s",
+        logger.info("Handling error: id=%s, code=%s, description=%s, data=%s",
             response.id, error.code, error.message, data
         )
