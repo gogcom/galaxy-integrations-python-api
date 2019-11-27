@@ -12,13 +12,13 @@ from tests import create_message, get_messages
 @pytest.mark.asyncio
 async def test_get_user_presence_success(plugin, read, write):
     context = "abc"
-    user_ids = ["666", "13", "42", "69", "22"]
+    user_id_list = ["666", "13", "42", "69", "22"]
     plugin.prepare_user_presence_context.return_value = async_return_value(context)
     request = {
         "jsonrpc": "2.0",
         "id": "11",
         "method": "start_user_presence_import",
-        "params": {"user_ids": user_ids}
+        "params": {"user_id_list": user_id_list}
     }
     read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
     plugin.get_user_presence.side_effect = [
@@ -60,7 +60,7 @@ async def test_get_user_presence_success(plugin, read, write):
     ]
     await plugin.run()
     plugin.get_user_presence.assert_has_calls([
-        call(user_id, context) for user_id in user_ids
+        call(user_id, context) for user_id in user_id_list
     ])
     plugin.user_presence_import_complete.assert_called_once_with()
 
@@ -151,7 +151,7 @@ async def test_get_user_presence_error(exception, code, message, plugin, read, w
         "jsonrpc": "2.0",
         "id": request_id,
         "method": "start_user_presence_import",
-        "params": {"user_ids": [user_id]}
+        "params": {"user_id_list": [user_id]}
     }
     read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
     plugin.get_user_presence.side_effect = exception
@@ -192,7 +192,7 @@ async def test_prepare_get_user_presence_context_error(plugin, read, write):
         "jsonrpc": "2.0",
         "id": request_id,
         "method": "start_user_presence_import",
-        "params": {"user_ids": ["6"]}
+        "params": {"user_id_list": ["6"]}
     }
     read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
     await plugin.run()
@@ -218,7 +218,7 @@ async def test_import_already_in_progress_error(plugin, read, write):
             "id": "3",
             "method": "start_user_presence_import",
             "params": {
-                "user_ids": ["42"]
+                "user_id_list": ["42"]
             }
         },
         {
@@ -226,7 +226,7 @@ async def test_import_already_in_progress_error(plugin, read, write):
             "id": "4",
             "method": "start_user_presence_import",
             "params": {
-                "user_ids": ["666"]
+                "user_id_list": ["666"]
             }
         }
     ]

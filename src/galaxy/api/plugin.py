@@ -971,11 +971,11 @@ class Plugin:
     def os_compatibility_import_complete(self) -> None:
         """Override this method to handle operations after OS compatibility import is finished (like updating cache)."""
 
-    async def _start_user_presence_import(self, user_ids: List[str]) -> None:
+    async def _start_user_presence_import(self, user_id_list: List[str]) -> None:
         if self._user_presence_import_in_progress:
             raise ImportInProgress()
 
-        context = await self.prepare_user_presence_context(user_ids)
+        context = await self.prepare_user_presence_context(user_id_list)
 
         async def import_user_presence(user_id, context_) -> None:
             try:
@@ -986,11 +986,11 @@ class Plugin:
                 logger.exception("Unexpected exception raised in import_user_presence")
                 self._user_presence_import_failure(user_id, UnknownError())
 
-        async def import_user_presence_set(user_ids_, context_) -> None:
+        async def import_user_presence_set(user_id_list_, context_) -> None:
             try:
                 await asyncio.gather(*[
                     import_user_presence(user_id, context_)
-                    for user_id in user_ids_
+                    for user_id in user_id_list_
                 ])
             finally:
                 self._user_presence_import_finished()
@@ -998,18 +998,18 @@ class Plugin:
                 self.user_presence_import_complete()
 
         self._external_task_manager.create_task(
-            import_user_presence_set(user_ids, context),
+            import_user_presence_set(user_id_list, context),
             "user presence import",
             handle_exceptions=False
         )
         self._user_presence_import_in_progress = True
 
-    async def prepare_user_presence_context(self, user_ids: List[str]) -> Any:
+    async def prepare_user_presence_context(self, user_id_list: List[str]) -> Any:
         """Override this method to prepare context for get_user_presence.
         This allows for optimizations like batch requests to platform API.
         Default implementation returns None.
 
-        :param user_ids: the ids of the users for whom presence information is imported
+        :param user_id_list: the ids of the users for whom presence information is imported
         :return: context
         """
         return None
