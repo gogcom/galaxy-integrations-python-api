@@ -29,7 +29,7 @@ class JsonRpcError(Exception):
         }
 
         if self.data is not None:
-            obj["error"]["data"] = self.data
+            obj["data"] = self.data
 
         return obj
 
