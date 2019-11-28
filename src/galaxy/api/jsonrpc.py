@@ -93,7 +93,6 @@ class Connection():
         self._methods = {}
         self._notifications = {}
         self._task_manager = TaskManager("jsonrpc server")
-        self._write_lock = asyncio.Lock()
         self._last_request_id = 0
         self._requests_futures = {}
 
@@ -301,16 +300,11 @@ class Connection():
             raise InvalidRequest()
 
     def _send(self, data):
-        async def send_task(data_):
-            async with self._write_lock:
-                self._writer.write(data_)
-                await self._writer.drain()
-
         try:
             line = self._encoder.encode(data)
             data = (line + "\n").encode("utf-8")
             logger.debug("Sending %d byte of data", len(data))
-            self._task_manager.create_task(send_task(data), "send")
+            self._writer.write(data)
         except TypeError as error:
             logger.error(str(error))
 
