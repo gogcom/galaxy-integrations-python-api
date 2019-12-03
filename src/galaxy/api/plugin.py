@@ -66,6 +66,8 @@ class Importer:
                 self._notification_success(id_, element)
             except ApplicationError as error:
                 self._notification_failure(id_, error)
+            except asyncio.CancelledError:
+                pass
             except Exception:
                 logger.exception("Unexpected exception raised in %s importer", self._name)
                 self._notification_failure(id_, UnknownError())
@@ -74,10 +76,12 @@ class Importer:
             try:
                 imports = [import_element(id_, context_) for id_ in ids_]
                 await asyncio.gather(*imports)
-            finally:
                 self._notification_finished()
-                self._import_in_progress = False
                 self._complete()
+            except asyncio.CancelledError:
+                logger.debug("Importing %s cancelled", self._name)
+            finally:
+                self._import_in_progress = False
 
         self._task_manager.create_task(
             import_elements(ids, context),
