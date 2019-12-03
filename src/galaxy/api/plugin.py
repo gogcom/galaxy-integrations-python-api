@@ -31,6 +31,62 @@ class JSONEncoder(json.JSONEncoder):
         return super().default(o)
 
 
+class Importer:
+    def __init__(
+        self,
+        task_manger,
+        name,
+        get,
+        prepare_context,
+        notification_success,
+        notification_failure,
+        notification_finished,
+        complete
+    ):
+        self._task_manager = task_manger
+        self._name = name
+        self._get = get
+        self._prepare_context = prepare_context
+        self._notification_success = notification_success
+        self._notification_failure = notification_failure
+        self._notification_finished = notification_finished
+        self._complete = complete
+
+        self._import_in_progress = False
+
+    async def start(self, ids):
+        if self._import_in_progress:
+            raise ImportInProgress()
+
+        context = await self._prepare_context(ids)
+
+        async def import_element(id_, context_):
+            try:
+                element = await self._get(id_, context_)
+                self._notification_success(id_, element)
+            except ApplicationError as error:
+                self._notification_failure(id_, error)
+            except Exception:
+                logger.exception("Unexpected exception raised in %s importer", self._name)
+                self._notification_failure(id_, UnknownError())
+
+        async def import_elements(ids_, context_):
+            try:
+                imports = [import_element(id_, context_) for id_ in ids_]
+                await asyncio.gather(*imports)
+            finally:
+                self._notification_finished()
+                self._import_in_progress = False
+                self._complete()
+
+        self._task_manager.create_task(
+            import_elements(ids, context),
+            "{} import".format(self._name),
+            handle_exceptions=False
+        )
+        self._import_in_progress = True
+
+
 class Plugin:
     """Use and override methods of this class to create a new platform integration."""
 
@@ -48,16 +104,61 @@ class Plugin:
         encoder = JSONEncoder()
         self._connection = Connection(self._reader, self._writer, encoder)
 
-        self._achievements_import_in_progress = False
-        self._game_times_import_in_progress = False
-        self._game_library_settings_import_in_progress = False
-        self._os_compatibility_import_in_progress = False
-        self._user_presence_import_in_progress = False
-
         self._persistent_cache = dict()
 
         self._internal_task_manager = TaskManager("plugin internal")
         self._external_task_manager = TaskManager("plugin external")
+
+        self._achievements_importer = Importer(
+            self._external_task_manager,
+            "achievements",
+            self.get_unlocked_achievements,
+            self.prepare_achievements_context,
+            self._game_achievements_import_success,
+            self._game_achievements_import_failure,
+            self._achievements_import_finished,
+            self.achievements_import_complete
+        )
+        self._game_time_importer = Importer(
+            self._external_task_manager,
+            "game times",
+            self.get_game_time,
+            self.prepare_game_times_context,
+            self._game_time_import_success,
+            self._game_time_import_failure,
+            self._game_times_import_finished,
+            self.game_times_import_complete
+        )
+        self._game_library_settings_importer = Importer(
+            self._external_task_manager,
+            "game library settings",
+            self.get_game_library_settings,
+            self.prepare_game_library_settings_context,
+            self._game_library_settings_import_success,
+            self._game_library_settings_import_failure,
+            self._game_library_settings_import_finished,
+            self.game_library_settings_import_complete
+        )
+        self._os_compatibility_importer = Importer(
+            self._external_task_manager,
+            "os compatibility",
+            self.get_os_compatibility,
+            self.prepare_os_compatibility_context,
+            self._os_compatibility_import_success,
+            self._os_compatibility_import_failure,
+            self._os_compatibility_import_finished,
+            self.os_compatibility_import_complete
+        )
+        self._user_presence_importer = Importer(
+            self._external_task_manager,
+            "users presence",
+            self.get_user_presence,
+            self.prepare_user_presence_context,
+            self._user_presence_import_success,
+            self._user_presence_import_failure,
+            self._user_presence_import_finished,
+            self.user_presence_import_complete
+        )
 
         # internal
         self._register_method("shutdown", self._shutdown, internal=True)
@@ -435,7 +536,7 @@ class Plugin:
             }
         )
 
-    def _game_time_import_success(self, game_time: GameTime) -> None:
+    def _game_time_import_success(self, game_id: str, game_time: GameTime) -> None:
         params = {"game_time": game_time}
         self._connection.send_notification("game_time_import_success", params)
 
@@ -449,7 +550,7 @@ class Plugin:
     def _game_times_import_finished(self) -> None:
         self._connection.send_notification("game_times_import_finished", None)
 
-    def _game_library_settings_import_success(self, game_library_settings: GameLibrarySettings) -> None:
+    def _game_library_settings_import_success(self, game_id: str, game_library_settings: GameLibrarySettings) -> None:
         params = {"game_library_settings": game_library_settings}
         self._connection.send_notification("game_library_settings_import_success", params)
 
@@ -636,36 +737,7 @@ class Plugin:
         raise NotImplementedError()
 
     async def _start_achievements_import(self, game_ids: List[str]) -> None:
-        if self._achievements_import_in_progress:
-            raise ImportInProgress()
-
-        context = await self.prepare_achievements_context(game_ids)
-
-        async def import_game_achievements(game_id, context_):
-            try:
-                achievements = await self.get_unlocked_achievements(game_id, context_)
-                self._game_achievements_import_success(game_id, achievements)
-            except ApplicationError as error:
-                self._game_achievements_import_failure(game_id, error)
-            except Exception:
-                logger.exception("Unexpected exception raised in import_game_achievements")
-                self._game_achievements_import_failure(game_id, UnknownError())
-
-        async def import_games_achievements(game_ids_, context_):
-            try:
-                imports = [import_game_achievements(game_id, context_) for game_id in game_ids_]
-                await asyncio.gather(*imports)
-            finally:
-                self._achievements_import_finished()
-                self._achievements_import_in_progress = False
-                self.achievements_import_complete()
-
-        self._external_task_manager.create_task(
-            import_games_achievements(game_ids, context),
-            "unlocked achievements import",
-            handle_exceptions=False
-        )
-        self._achievements_import_in_progress = True
+        await self._achievements_importer.start(game_ids)
 
     async def prepare_achievements_context(self, game_ids: List[str]) -> Any:
         """Override this method to prepare context for get_unlocked_achievements.
@@ -800,36 +872,7 @@ class Plugin:
         raise NotImplementedError()
 
     async def _start_game_times_import(self, game_ids: List[str]) -> None:
-        if self._game_times_import_in_progress:
-            raise ImportInProgress()
-
-        context = await self.prepare_game_times_context(game_ids)
-
-        async def import_game_time(game_id, context_):
-            try:
-                game_time = await self.get_game_time(game_id, context_)
-                self._game_time_import_success(game_time)
-            except ApplicationError as error:
-                self._game_time_import_failure(game_id, error)
-            except Exception:
-                logger.exception("Unexpected exception raised in import_game_time")
-                self._game_time_import_failure(game_id, UnknownError())
-
-        async def import_game_times(game_ids_, context_):
-            try:
-                imports = [import_game_time(game_id, context_) for game_id in game_ids_]
-                await asyncio.gather(*imports)
-            finally:
-                self._game_times_import_finished()
-                self._game_times_import_in_progress = False
-                self.game_times_import_complete()
-
-        self._external_task_manager.create_task(
-            import_game_times(game_ids, context),
-            "game times import",
-            handle_exceptions=False
-        )
-        self._game_times_import_in_progress = True
+        await self._game_time_importer.start(game_ids)
 
     async def prepare_game_times_context(self, game_ids: List[str]) -> Any:
         """Override this method to prepare context for get_game_time.
@@ -858,36 +901,7 @@ class Plugin:
         """
 
     async def _start_game_library_settings_import(self, game_ids: List[str]) -> None:
-        if self._game_library_settings_import_in_progress:
-            raise ImportInProgress()
-
-        context = await self.prepare_game_library_settings_context(game_ids)
-
-        async def import_game_library_settings(game_id, context_):
-            try:
-                game_library_settings = await self.get_game_library_settings(game_id, context_)
-                self._game_library_settings_import_success(game_library_settings)
-            except ApplicationError as error:
-                self._game_library_settings_import_failure(game_id, error)
-            except Exception:
-                logger.exception("Unexpected exception raised in import_game_library_settings")
-                self._game_library_settings_import_failure(game_id, UnknownError())
-
-        async def import_game_library_settings_set(game_ids_, context_):
-            try:
-                imports = [import_game_library_settings(game_id, context_) for game_id in game_ids_]
-                await asyncio.gather(*imports)
-            finally:
-                self._game_library_settings_import_finished()
-                self._game_library_settings_import_in_progress = False
-                self.game_library_settings_import_complete()
-
-        self._external_task_manager.create_task(
-            import_game_library_settings_set(game_ids, context),
-            "game library settings import",
-            handle_exceptions=False
-        )
-        self._game_library_settings_import_in_progress = True
+        await self._game_library_settings_importer.start(game_ids)
 
     async def prepare_game_library_settings_context(self, game_ids: List[str]) -> Any:
         """Override this method to prepare context for get_game_library_settings.
@@ -916,37 +930,7 @@ class Plugin:
         """
 
     async def _start_os_compatibility_import(self, game_ids: List[str]) -> None:
-        if self._os_compatibility_import_in_progress:
-            raise ImportInProgress()
-
-        context = await self.prepare_os_compatibility_context(game_ids)
-
-        async def import_os_compatibility(game_id, context_):
-            try:
-                os_compatibility = await self.get_os_compatibility(game_id, context_)
-                self._os_compatibility_import_success(game_id, os_compatibility)
-            except ApplicationError as error:
-                self._os_compatibility_import_failure(game_id, error)
-            except Exception:
-                logger.exception("Unexpected exception raised in import_os_compatibility")
-                self._os_compatibility_import_failure(game_id, UnknownError())
-
-        async def import_os_compatibility_set(game_ids_, context_):
-            try:
-                await asyncio.gather(*[
-                    import_os_compatibility(game_id, context_) for game_id in game_ids_
-                ])
-            finally:
-                self._os_compatibility_import_finished()
-                self._os_compatibility_import_in_progress = False
-                self.os_compatibility_import_complete()
-
-        self._external_task_manager.create_task(
-            import_os_compatibility_set(game_ids, context),
-            "game OS compatibility import",
-            handle_exceptions=False
-        )
-        self._os_compatibility_import_in_progress = True
+        await self._os_compatibility_importer.start(game_ids)
 
     async def prepare_os_compatibility_context(self, game_ids: List[str]) -> Any:
         """Override this method to prepare context for get_os_compatibility.
@@ -972,37 +956,7 @@ class Plugin:
         """Override this method to handle operations after OS compatibility import is finished (like updating cache)."""
 
     async def _start_user_presence_import(self, user_id_list: List[str]) -> None:
-        if self._user_presence_import_in_progress:
-            raise ImportInProgress()
-
-        context = await self.prepare_user_presence_context(user_id_list)
-
-        async def import_user_presence(user_id, context_) -> None:
-            try:
-                self._user_presence_import_success(user_id, await self.get_user_presence(user_id, context_))
-            except ApplicationError as error:
-                self._user_presence_import_failure(user_id, error)
-            except Exception:
-                logger.exception("Unexpected exception raised in import_user_presence")
-                self._user_presence_import_failure(user_id, UnknownError())
-
-        async def import_user_presence_set(user_id_list_, context_) -> None:
-            try:
-                await asyncio.gather(*[
-                    import_user_presence(user_id, context_)
-                    for user_id in user_id_list_
-                ])
-            finally:
-                self._user_presence_import_finished()
-                self._user_presence_import_in_progress = False
-                self.user_presence_import_complete()
-
-        self._external_task_manager.create_task(
-            import_user_presence_set(user_id_list, context),
-            "user presence import",
-            handle_exceptions=False
-        )
-        self._user_presence_import_in_progress = True
+        await self._user_presence_importer.start(user_id_list)
 
     async def prepare_user_presence_context(self, user_id_list: List[str]) -> Any:
         """Override this method to prepare context for get_user_presence.
