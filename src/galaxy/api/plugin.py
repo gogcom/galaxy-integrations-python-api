@@ -1021,10 +1021,15 @@ def create_and_run_plugin(plugin_class, argv):
 
     async def coroutine():
         reader, writer = await asyncio.open_connection("127.0.0.1", port)
-        extra_info = writer.get_extra_info("sockname")
-        logger.info("Using local address: %s:%u", *extra_info)
-        async with plugin_class(reader, writer, token) as plugin:
-            await plugin.run()
+        try:
+            extra_info = writer.get_extra_info("sockname")
+            logger.info("Using local address: %s:%u", *extra_info)
+            async with plugin_class(reader, writer, token) as plugin:
+                await plugin.run()
+        finally:
+            writer.close()
+            await writer.wait_closed()
+
 
     try:
         if sys.platform == "win32":
