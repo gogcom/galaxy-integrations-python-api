@@ -58,8 +58,6 @@ class Importer:
         if self._import_in_progress:
             raise ImportInProgress()
 
-        context = await self._prepare_context(ids)
-
         async def import_element(id_, context_):
             try:
                 element = await self._get(id_, context_)
@@ -83,12 +81,17 @@ class Importer:
             finally:
                 self._import_in_progress = False
 
-        self._task_manager.create_task(
-            import_elements(ids, context),
-            "{} import".format(self._name),
-            handle_exceptions=False
-        )
         self._import_in_progress = True
+        try:
+            context = await self._prepare_context(ids)
+            self._task_manager.create_task(
+                import_elements(ids, context),
+                "{} import".format(self._name),
+                handle_exceptions=False
+            )
+        except:
+            self._import_in_progress = False
+            raise
 
 
 class Plugin:
