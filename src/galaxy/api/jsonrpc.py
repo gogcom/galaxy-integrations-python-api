@@ -299,11 +299,14 @@ class Connection():
         except TypeError:
             raise InvalidRequest()
 
-    def _send(self, data):
+    def _send(self, data, sensitive=True):
         try:
             line = self._encoder.encode(data)
             data = (line + "\n").encode("utf-8")
-            logger.debug("Sending %d byte of data", len(data))
+            if sensitive:
+                logger.debug("Sending %d bytes of data", len(data))
+            else:
+                logging.debug("Sending data: %s", line)
             self._writer.write(data)
         except TypeError as error:
             logger.error(str(error))
@@ -314,7 +317,7 @@ class Connection():
             "id": request_id,
             "result": result
         }
-        self._send(response)
+        self._send(response, sensitive=False)
 
     def _send_error(self, request_id, error):
         response = {
@@ -323,7 +326,7 @@ class Connection():
             "error": error.json()
         }
 
-        self._send(response)
+        self._send(response, sensitive=False)
 
     def _send_request(self, request_id, method, params):
         request = {
@@ -332,7 +335,7 @@ class Connection():
             "id": request_id,
             "params": params
         }
-        self._send(request)
+        self._send(request, sensitive=True)
 
     def _send_notification(self, method, params):
         notification = {
@@ -340,7 +343,7 @@ class Connection():
             "method": method,
             "params": params
         }
-        self._send(notification)
+        self._send(notification, sensitive=True)
 
     @staticmethod
     def _log_request(request, sensitive_params):
