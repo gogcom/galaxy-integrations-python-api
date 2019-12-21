@@ -1,5 +1,5 @@
 """
-This module standarize http traffic and the error handling for further communication with the GOG Galaxy 2.0.
+This module standardizes http traffic and the error handling for further communication with the GOG Galaxy 2.0.
 
 It is recommended to use provided convenient methods for HTTP requests, especially when dealing with authorized sessions.
 Examplary simple web service could looks like:
