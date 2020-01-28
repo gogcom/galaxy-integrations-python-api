@@ -166,6 +166,16 @@ class Plugin:
             self._user_presence_import_finished,
             self.user_presence_import_complete
         )
+        self._local_size_importer = Importer(
+            self._external_task_manager,
+            "local size",
+            self.get_local_size,
+            self.prepare_local_size_context,
+            self._local_size_import_success,
+            self._local_size_import_failure,
+            self._local_size_import_finished,
+            self.local_size_import_complete
+        )
 
         # internal
         self._register_method("shutdown", self._shutdown, internal=True)
@@ -232,6 +242,9 @@ class Plugin:
 
         self._register_method("start_user_presence_import", self._start_user_presence_import)
         self._detect_feature(Feature.ImportUserPresence, ["get_user_presence"])
+
+        self._register_method("start_local_size_import", self._start_local_size_import)
+        self._detect_feature(Feature.ImportLocalSize, ["get_local_size"])
 
     async def __aenter__(self):
         return self
@@ -613,6 +626,27 @@ class Plugin:
     def _user_presence_import_finished(self) -> None:
         self._connection.send_notification("user_presence_import_finished", None)
 
+    def _local_size_import_success(self, game_id: str, size: Optional[int]) -> None:
+        self._connection.send_notification(
+            "local_size_import_success",
+            {
+                "game_id": game_id,
+                "local_size": size
+            }
+        )
+
+    def _local_size_import_failure(self, game_id: str, error: ApplicationError) -> None:
+        self._connection.send_notification(
+            "local_size_import_failure",
+            {
+                "game_id": game_id,
+                "error": error.json()
+            }
+        )
+
+    def _local_size_import_finished(self) -> None:
+        self._connection.send_notification("local_size_import_finished", None)
+
     def lost_authentication(self) -> None:
         """Notify the client that integration has lost authentication for the
          current user and is unable to perform actions which would require it.
@@ -966,7 +1000,7 @@ class Plugin:
         await self._user_presence_importer.start(user_id_list)
 
     async def prepare_user_presence_context(self, user_id_list: List[str]) -> Any:
-        """Override this method to prepare context for get_user_presence.
+        """Override this method to prepare context for :meth:`get_user_presence`.
         This allows for optimizations like batch requests to platform API.
         Default implementation returns None.
 
@@ -987,6 +1021,32 @@ class Plugin:
 
     def user_presence_import_complete(self) -> None:
         """Override this method to handle operations after presence import is finished (like updating cache)."""
+
+    async def _start_local_size_import(self, game_ids: List[str]) -> None:
+        await self._local_size_importer.start(game_ids)
+
+    async def prepare_local_size_context(self, game_ids: List[str]) -> Any:
+        """Override this method to prepare context for :meth:`get_local_size`
+        Default implementation returns None.
+
+        :param game_ids: the ids of the games for which information about size is imported
+        :return: context
+        """
+        return None
+
+    async def get_local_size(self, game_id: str, context: Any) -> int:
+        """Override this method to return installed game size in bytes.
+
+        .. note::
+        It is preferable to use more efficient way of game size retrieval than iterating over all local files.
+
+        :param context: the value returned from :meth:`prepare_local_size_context`
+        :return: game size in bytes
+        """
+        raise NotImplementedError()
+
+    def local_size_import_complete(self) -> None:
+        """Override this method to handle operations after local game size import is finished (like updating cache)."""
 
 
 def create_and_run_plugin(plugin_class, argv):

@@ -114,6 +114,7 @@ class Feature(Enum):
     ImportGameLibrarySettings = "ImportGameLibrarySettings"
     ImportOSCompatibility = "ImportOSCompatibility"
     ImportUserPresence = "ImportUserPresence"
+    ImportLocalSize = "ImportLocalSize"
 
 
 class LicenseType(Enum):

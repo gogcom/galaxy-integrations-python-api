@@ -17,7 +17,8 @@ def test_base_class():
         Feature.LaunchPlatformClient,
         Feature.ImportGameLibrarySettings,
         Feature.ImportOSCompatibility,
-        Feature.ImportUserPresence
+        Feature.ImportUserPresence,
+        Feature.ImportLocalSize
     }
 
 

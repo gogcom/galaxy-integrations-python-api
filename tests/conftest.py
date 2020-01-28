@@ -64,6 +64,9 @@ async def plugin(reader, writer):
         "get_user_presence",
         "prepare_user_presence_context",
         "user_presence_import_complete",
+        "get_local_size",
+        "prepare_local_size_context",
+        "local_size_import_complete",
     )
 
     with ExitStack() as stack:
