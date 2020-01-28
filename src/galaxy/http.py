@@ -2,7 +2,7 @@
 This module standardizes http traffic and the error handling for further communication with the GOG Galaxy 2.0.
 
 It is recommended to use provided convenient methods for HTTP requests, especially when dealing with authorized sessions.
-Examplary simple web service could looks like:
+Exemplary simple web service could looks like:
 
     .. code-block:: python
 
@@ -72,7 +72,7 @@ class HttpClient:
 
 def create_tcp_connector(*args, **kwargs) -> aiohttp.TCPConnector:
     """
-    Creates TCP connector with resonable defaults.
+    Creates TCP connector with reasonable defaults.
     For details about available parameters refer to
     `aiohttp.TCPConnector <https://docs.aiohttp.org/en/stable/client_reference.html#tcpconnector>`_
     """
@@ -86,11 +86,11 @@ def create_tcp_connector(*args, **kwargs) -> aiohttp.TCPConnector:
 
 def create_client_session(*args, **kwargs) -> aiohttp.ClientSession:
     """
-    Creates client session with resonable defaults.
+    Creates client session with reasonable defaults.
     For details about available parameters refer to
     `aiohttp.ClientSession <https://docs.aiohttp.org/en/stable/client_reference.html>`_
 
-    Examplary customization:
+    Exemplary customization:
 
     .. code-block:: python
 
@@ -124,25 +124,25 @@ def handle_exception():
         raise BackendNotAvailable()
     except aiohttp.ClientConnectionError:
         raise NetworkError()
-    except aiohttp.ContentTypeError:
-        raise UnknownBackendResponse()
+    except aiohttp.ContentTypeError as error:
+        raise UnknownBackendResponse(error.message)
     except aiohttp.ClientResponseError as error:
         if error.status == HTTPStatus.UNAUTHORIZED:
-            raise AuthenticationRequired()
+            raise AuthenticationRequired(error.message)
         if error.status == HTTPStatus.FORBIDDEN:
-            raise AccessDenied()
+            raise AccessDenied(error.message)
         if error.status == HTTPStatus.SERVICE_UNAVAILABLE:
-            raise BackendNotAvailable()
+            raise BackendNotAvailable(error.message)
         if error.status == HTTPStatus.TOO_MANY_REQUESTS:
-            raise TooManyRequests()
+            raise TooManyRequests(error.message)
         if error.status >= 500:
-            raise BackendError()
+            raise BackendError(error.message)
         if error.status >= 400:
             logger.warning(
                 "Got status %d while performing %s request for %s",
                 error.status, error.request_info.method, str(error.request_info.url)
             )
-            raise UnknownError()
-    except aiohttp.ClientError:
+            raise UnknownError(error.message)
+    except aiohttp.ClientError as e:
         logger.exception("Caught exception while performing request")
-        raise UnknownError()
+        raise UnknownError(repr(e))

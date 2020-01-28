@@ -20,7 +20,7 @@ class BackendError(ApplicationError):
 
 class UnknownBackendResponse(ApplicationError):
     def __init__(self, data=None):
-        super().__init__(4, "Backend responded in uknown way", data)
+        super().__init__(4, "Backend responded in unknown way", data)
 
 class TooManyRequests(ApplicationError):
     def __init__(self, data=None):
