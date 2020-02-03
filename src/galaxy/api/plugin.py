@@ -706,7 +706,7 @@ class Plugin:
         This method is called by the GOG Galaxy Client.
 
         :param stored_credentials: If the client received any credentials to store locally
-         in the previous session they will be passed here as a parameter.
+            in the previous session they will be passed here as a parameter.
 
 
         Example of possible override of the method:
@@ -1034,14 +1034,17 @@ class Plugin:
         """
         return None
 
-    async def get_local_size(self, game_id: str, context: Any) -> int:
-        """Override this method to return installed game size in bytes.
+    async def get_local_size(self, game_id: str, context: Any) -> Optional[int]:
+        """Override this method to return installed game size.
 
         .. note::
-        It is preferable to use more efficient way of game size retrieval than iterating over all local files.
+          It is preferable to avoid iterating over local game files when overriding this method.
+          If possible, please use a more efficient way of game size retrieval.
 
         :param context: the value returned from :meth:`prepare_local_size_context`
-        :return: game size in bytes
+        :return: game size (in bytes) or `None` if game size cannot be determined;
+            '0' if the game is not installed, or if it is not present locally (e.g. installed
+            on another machine and accessible via remote connection, playable via web browser etc.)
         """
         raise NotImplementedError()
 
