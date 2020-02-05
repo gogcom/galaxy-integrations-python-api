@@ -216,3 +216,34 @@ class UserPresence:
     game_title: Optional[str] = None
     in_game_status: Optional[str] = None
     full_status: Optional[str] = None
+
+@dataclass
+class Subscription:
+    """Information about a subscription. If a subscription is not owned no end_time should be specified.
+
+    :param subscription_name: name of the subscription, will also be used as its identifier.
+    :param owned: whether the subscription is owned or not, None if unknown.
+    :param end_time: unix timestamp of when the subscription ends, None if unknown.
+    """
+    subscription_name: str
+    owned: Optional[bool] = None
+    end_time: Optional[int] = None
+
+    def __post_init__(self):
+        if not self.owned:
+            assert self.end_time is None, "Subscriptions not owned but end time specified." \
+                                          "Specify end time for owned subscriptions only"
+
+@dataclass
+class SubscriptionGame:
+    """Information about a game from a subscription.
+
+    :param game_title: title of the game
+    :param game_id: id of the game
+    :param start_time: unix timestamp of when the game has been added to subscription
+    :param end_time: unix timestamp of when the game is removed from subscription.
+    """
+    game_title: str
+    game_id: str
+    start_time: Optional[int] = None
+    end_time: Optional[int] = None

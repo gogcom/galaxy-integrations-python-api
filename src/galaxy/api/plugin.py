@@ -10,7 +10,8 @@ from galaxy.api.consts import Feature, OSCompatibility
 from galaxy.api.errors import ImportInProgress, UnknownError
 from galaxy.api.jsonrpc import ApplicationError, Connection
 from galaxy.api.types import (
-    Achievement, Authentication, Game, GameLibrarySettings, GameTime, LocalGame, NextStep, UserInfo, UserPresence
+    Achievement, Authentication, Game, GameLibrarySettings, GameTime, LocalGame, NextStep, UserInfo, UserPresence,
+    Subscription, SubscriptionGame
 )
 from galaxy.task_manager import TaskManager
 
@@ -176,6 +177,16 @@ class Plugin:
             self._local_size_import_finished,
             self.local_size_import_complete
         )
+        self._subscription_games_importer = Importer(
+            self._external_task_manager,
+            "subscription games",
+            self.get_subscription_games,
+            self.prepare_subscription_games_context,
+            self._subscription_games_import_success,
+            self._subscription_games_import_failure,
+            self._subscription_games_import_finished,
+            self.subscription_games_import_complete
+        )
 
         # internal
         self._register_method("shutdown", self._shutdown, internal=True)
@@ -245,6 +256,10 @@ class Plugin:
 
         self._register_method("start_local_size_import", self._start_local_size_import)
         self._detect_feature(Feature.ImportLocalSize, ["get_local_size"])
+
+        self._register_method("import_subscriptions", self.get_subscriptions, result_name="subscriptions")
+        self._register_method("start_subscription_games_import", self._start_subscription_games_import)
+        self._detect_feature(Feature.ImportSubscriptions, ["get_subscriptions", "get_subscription_games"])
 
     async def __aenter__(self):
         return self
@@ -646,6 +661,27 @@ class Plugin:
 
     def _local_size_import_finished(self) -> None:
         self._connection.send_notification("local_size_import_finished", None)
+
+    def _subscription_games_import_success(self, subscription_name: str, subscription_games: Optional[List[SubscriptionGame]]) -> None:
+        self._connection.send_notification(
+            "subscription_games_import_success",
+            {
+                "subscription_name": subscription_name,
+                "subscription_games": subscription_games
+            }
+        )
+
+    def _subscription_games_import_failure(self, subscription_name: str, error: ApplicationError) -> None:
+        self._connection.send_notification(
+            "subscription_games_import_failure",
+            {
+                "subscription_name": subscription_name,
+                "error": error.json()
+            }
+        )
+
+    def _subscription_games_import_finished(self) -> None:
+        self._connection.send_notification("subscription_games_import_finished", None)
 
     def lost_authentication(self) -> None:
         """Notify the client that integration has lost authentication for the
@@ -1050,6 +1086,54 @@ class Plugin:
 
     def local_size_import_complete(self) -> None:
         """Override this method to handle operations after local game size import is finished (like updating cache)."""
+
+    async def get_subscriptions(self) -> List[Subscription]:
+        """Override this method to return a list of available
+         Subscriptions available on platform.
+        This method is called by the GOG Galaxy Client.
+
+         Both this method and get_subscription_games are required to be overridden
+         for the Subscriptions feature to be recognized
+
+        Example of possible override of the method:
+
+        .. code-block:: python
+            :linenos:
+
+            async def get_subscriptions(self, game_id):
+                subs = []
+                platform_subs_info = await self.retrieve_platform_subs_info()
+                for sub_info in platform_subs_info:
+                    subs.append(Subscription(subscription_name=sub_info['name'], owned=sub_info['is_owned']))
+                return subs
+
+        """
+        raise NotImplementedError()
+
+    async def _start_subscription_games_import(self, subscription_names: List[str]) -> None:
+        await self._subscription_games_importer.start(subscription_names)
+
+    async def prepare_subscription_games_context(self, subscription_names: List[str]) -> Any:
+        """Override this method to prepare context for :meth:`get_subscription_games`
+        Default implementation returns None.
+
+        :param subscription_names: the names of the subscriptions for which subscriptions games are imported
+        :return: context
+        """
+        return None
+
+    async def get_subscription_games(self, subscription_name: str, context: Any) -> Optional[List[SubscriptionGame]]:
+        """Override this method to return list of subscription games in a given subscription.
+
+        :param context: the value returned from :meth:`prepare_subscription_games_context`
+        :return: List of subscription games or `None` if list cannot be determined.
+        """
+        raise NotImplementedError()
+
+    def subscription_games_import_complete(self) -> None:
+        """Override this method to handle operations after
+        subscription games import is finished (like updating cache).
+        """
 
 
 def create_and_run_plugin(plugin_class, argv):

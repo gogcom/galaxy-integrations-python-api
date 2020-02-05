@@ -115,6 +115,7 @@ class Feature(Enum):
     ImportOSCompatibility = "ImportOSCompatibility"
     ImportUserPresence = "ImportUserPresence"
     ImportLocalSize = "ImportLocalSize"
+    ImportSubscriptions = "ImportSubscriptions"
 
 
 class LicenseType(Enum):

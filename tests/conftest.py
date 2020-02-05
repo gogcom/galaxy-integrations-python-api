@@ -67,6 +67,10 @@ async def plugin(reader, writer):
         "get_local_size",
         "prepare_local_size_context",
         "local_size_import_complete",
+        "get_subscriptions",
+        "get_subscription_games",
+        "prepare_subscription_games_context",
+        "subscription_games_import_complete"
     )
 
     with ExitStack() as stack:
