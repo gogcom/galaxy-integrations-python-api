@@ -5,7 +5,6 @@ from galaxy.api.errors import FailedParsingManifest, BackendError, UnknownError
 from galaxy.unittest.mock import async_return_value
 
 from tests import create_message, get_messages
-from asynctest import MagicMock
 
 @pytest.mark.asyncio
 async def test_get_subscriptions_success(plugin, read, write):
