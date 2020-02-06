@@ -19,7 +19,8 @@ def test_base_class():
         Feature.ImportOSCompatibility,
         Feature.ImportUserPresence,
         Feature.ImportLocalSize,
-        Feature.ImportSubscriptions
+        Feature.ImportSubscriptions,
+        Feature.ImportSubscriptionGames
     }
 
 

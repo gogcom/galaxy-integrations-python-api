@@ -62,6 +62,9 @@ class Importer:
             if self._yielding:
                 async for element in self._get(id_, context_):
                     self._notification_success(id_, element)
+                    if element is None:
+                        logger.debug("None element yielded, import finished")
+                        break
             else:
                 element = await self._get(id_, context_)
                 self._notification_success(id_, element)
@@ -265,8 +268,10 @@ class Plugin:
         self._detect_feature(Feature.ImportLocalSize, ["get_local_size"])
 
         self._register_method("import_subscriptions", self.get_subscriptions, result_name="subscriptions")
+        self._detect_feature(Feature.ImportSubscriptions, ["get_subscriptions"])
+
         self._register_method("start_subscription_games_import", self._start_subscription_games_import)
-        self._detect_feature(Feature.ImportSubscriptions, ["get_subscriptions", "get_subscription_games"])
+        self._detect_feature(Feature.ImportSubscriptionGames, ["get_subscription_games"])
 
     async def __aenter__(self):
         return self
@@ -1099,9 +1104,6 @@ class Plugin:
          Subscriptions available on platform.
         This method is called by the GOG Galaxy Client.
 
-         Both this method and get_subscription_games are required to be overridden
-         for the Subscriptions feature to be recognized
-
         Example of possible override of the method:
 
         .. code-block:: python
@@ -1132,6 +1134,9 @@ class Plugin:
     async def get_subscription_games(self, subscription_name: str, context: Any) -> AsyncGenerator[List[SubscriptionGame],None]:
         """Override this method to return SubscriptionGames for a given subscription.
         This method should `yield` results from a list of SubscriptionGames
+
+        Both this method and get_subscriptions are required to be overridden
+         for the ImportSubscriptionGames feature to be recognized
 
         :param context: the value returned from :meth:`prepare_subscription_games_context`
         :return yield List of subscription games.

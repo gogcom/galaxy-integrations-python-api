@@ -116,6 +116,7 @@ class Feature(Enum):
     ImportUserPresence = "ImportUserPresence"
     ImportLocalSize = "ImportLocalSize"
     ImportSubscriptions = "ImportSubscriptions"
+    ImportSubscriptionGames = "ImportSubscriptionGames"
 
 
 class LicenseType(Enum):

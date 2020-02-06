@@ -96,12 +96,17 @@ async def test_get_subscription_games_success(plugin, read, write):
         }
     }
     read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
-    plugin.get_subscription_games.return_value = async_return_value([
+
+    async def sub_games():
+        games = [
         SubscriptionGame(game_title="game A", game_id="game_A"),
         SubscriptionGame(game_title="game B", game_id="game_B", start_time=1548495632),
         SubscriptionGame(game_title="game C", game_id="game_C", end_time=1548495633),
         SubscriptionGame(game_title="game D", game_id="game_D", start_time=1548495632, end_time=1548495633),
-    ])
+    ]
+        yield [game for game in games]
+
+    plugin.get_subscription_games.return_value = sub_games()
     await plugin.run()
     plugin.prepare_subscription_games_context.assert_called_with(["sub_a"])
     plugin.get_subscription_games.assert_called_with("sub_a", 5)
@@ -140,6 +145,108 @@ async def test_get_subscription_games_success(plugin, read, write):
                         "end_time": 1548495633
                     }
                 ]
+            }
+        },
+        {
+            "jsonrpc": "2.0",
+            "method": "subscription_games_import_finished",
+            "params": None
+        }
+    ]
+
+@pytest.mark.asyncio
+async def test_get_subscription_games_success_none_yield(plugin, read, write):
+    plugin.prepare_subscription_games_context.return_value = async_return_value(5)
+    request = {
+        "jsonrpc": "2.0",
+        "id": "3",
+        "method": "start_subscription_games_import",
+        "params": {
+            "subscription_names": ["sub_a"]
+        }
+    }
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
+
+    async def sub_games():
+        yield None
+
+    plugin.get_subscription_games.return_value = sub_games()
+    await plugin.run()
+    plugin.prepare_subscription_games_context.assert_called_with(["sub_a"])
+    plugin.get_subscription_games.assert_called_with("sub_a", 5)
+    plugin.subscription_games_import_complete.asert_called_with()
+
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "id": "3",
+            "result": None
+        },
+        {
+            "jsonrpc": "2.0",
+            "method": "subscription_games_import_success",
+            "params": {
+                "subscription_name": "sub_a",
+                "subscription_games": None
+            }
+        },
+        {
+            "jsonrpc": "2.0",
+            "method": "subscription_games_import_finished",
+            "params": None
+        }
+    ]
+
+@pytest.mark.asyncio
+async def test_get_subscription_games_success_yield_mix(plugin, read, write):
+    plugin.prepare_subscription_games_context.return_value = async_return_value(5)
+    request = {
+        "jsonrpc": "2.0",
+        "id": "3",
+        "method": "start_subscription_games_import",
+        "params": {
+            "subscription_names": ["sub_a"]
+        }
+    }
+    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
+
+    async def sub_games():
+        games = [
+            SubscriptionGame(game_title="game A", game_id="game_A")]
+        yield games
+        yield None
+
+    plugin.get_subscription_games.return_value = sub_games()
+    await plugin.run()
+    plugin.prepare_subscription_games_context.assert_called_with(["sub_a"])
+    plugin.get_subscription_games.assert_called_with("sub_a", 5)
+    plugin.subscription_games_import_complete.asert_called_with()
+
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "id": "3",
+            "result": None
+        },
+        {
+            "jsonrpc": "2.0",
+            "method": "subscription_games_import_success",
+            "params": {
+                "subscription_name": "sub_a",
+                "subscription_games": [
+                    {
+                        "game_title": "game A",
+                        "game_id": "game_A"
+                    },
+                ]
+            }
+        },
+        {
+            "jsonrpc": "2.0",
+            "method": "subscription_games_import_success",
+            "params": {
+                "subscription_name": "sub_a",
+                "subscription_games": None
             }
         },
         {
