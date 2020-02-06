@@ -1,4 +1,4 @@
-image: registry-gitlab.gog.com/galaxy-client/gitlab-ci-tools:latest
+image: registry-gitlab.gog.com/docker/python:3.7.3
 
 stages:
   - test
