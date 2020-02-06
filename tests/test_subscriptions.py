@@ -105,9 +105,6 @@ async def test_get_subscription_games_success(plugin, read, write):
        ]
         yield [game for game in games]
 
-    print(type(sub_games()))
-    print(sub_games())
-
     plugin.get_subscription_games.return_value = sub_games()
     await plugin.run()
     plugin.prepare_subscription_games_context.assert_called_with(["sub_a"])
