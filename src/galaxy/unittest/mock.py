@@ -1,7 +1,6 @@
 import asyncio
 from unittest.mock import MagicMock
 
-
 class AsyncMock(MagicMock):
     """
     .. deprecated:: 0.45
