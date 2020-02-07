@@ -219,7 +219,7 @@ class UserPresence:
 
 @dataclass
 class Subscription:
-    """Information about a subscription. If a subscription is not owned no end_time should be specified.
+    """Information about a subscription.
 
     :param subscription_name: name of the subscription, will also be used as its identifier.
     :param owned: whether the subscription is owned or not, None if unknown.
@@ -229,10 +229,6 @@ class Subscription:
     owned: Optional[bool] = None
     end_time: Optional[int] = None
 
-    def __post_init__(self):
-        if not self.owned:
-            assert self.end_time is None, "Subscriptions not owned but end time specified." \
-                                          "Specify end time for owned subscriptions only"
 
 @dataclass
 class SubscriptionGame:
@@ -241,7 +237,7 @@ class SubscriptionGame:
     :param game_title: title of the game
     :param game_id: id of the game
     :param start_time: unix timestamp of when the game has been added to subscription
-    :param end_time: unix timestamp of when the game is removed from subscription.
+    :param end_time: unix timestamp of when the game will be removed from subscription.
     """
     game_title: str
     game_id: str

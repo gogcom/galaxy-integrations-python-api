@@ -78,11 +78,6 @@ async def test_get_subscriptions_failure_generic(plugin, read, write, error, cod
     ]
 
 @pytest.mark.asyncio
-async def test_subscription_assert_failure():
-    with pytest.raises(AssertionError):
-        Subscription("test", False, 123)
-
-@pytest.mark.asyncio
 async def test_get_subscription_games_success(plugin, read, write):
     plugin.prepare_subscription_games_context.return_value = async_return_value(5)
     request = {
@@ -153,7 +148,7 @@ async def test_get_subscription_games_success(plugin, read, write):
     ]
 
 @pytest.mark.asyncio
-async def test_get_subscription_games_success_none_yield(plugin, read, write):
+async def test_get_subscription_games_success_empty(plugin, read, write):
     plugin.prepare_subscription_games_context.return_value = async_return_value(5)
     request = {
         "jsonrpc": "2.0",
@@ -194,66 +189,6 @@ async def test_get_subscription_games_success_none_yield(plugin, read, write):
             "params": None
         }
     ]
-
-@pytest.mark.asyncio
-async def test_get_subscription_games_success_yield_mix(plugin, read, write):
-    plugin.prepare_subscription_games_context.return_value = async_return_value(5)
-    request = {
-        "jsonrpc": "2.0",
-        "id": "3",
-        "method": "start_subscription_games_import",
-        "params": {
-            "subscription_names": ["sub_a"]
-        }
-    }
-    read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
-
-    async def sub_games():
-        games = [
-            SubscriptionGame(game_title="game A", game_id="game_A")]
-        yield games
-        yield None
-
-    plugin.get_subscription_games.return_value = sub_games()
-    await plugin.run()
-    plugin.prepare_subscription_games_context.assert_called_with(["sub_a"])
-    plugin.get_subscription_games.assert_called_with("sub_a", 5)
-    plugin.subscription_games_import_complete.asert_called_with()
-
-    assert get_messages(write) == [
-        {
-            "jsonrpc": "2.0",
-            "id": "3",
-            "result": None
-        },
-        {
-            "jsonrpc": "2.0",
-            "method": "subscription_games_import_success",
-            "params": {
-                "subscription_name": "sub_a",
-                "subscription_games": [
-                    {
-                        "game_title": "game A",
-                        "game_id": "game_A"
-                    },
-                ]
-            }
-        },
-        {
-            "jsonrpc": "2.0",
-            "method": "subscription_games_import_success",
-            "params": {
-                "subscription_name": "sub_a",
-                "subscription_games": None
-            }
-        },
-        {
-            "jsonrpc": "2.0",
-            "method": "subscription_games_import_finished",
-            "params": None
-        }
-    ]
-
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("exception,code,message", [
@@ -305,9 +240,9 @@ async def test_get_subscription_games_error(exception, code, message, plugin, re
 @pytest.mark.asyncio
 async def test_prepare_get_subscription_games_context_error(plugin, read, write):
     request_id = "31415"
-    error_details = "Unexpected syntax"
-    error_message, error_code = FailedParsingManifest().message, FailedParsingManifest().code
-    plugin.prepare_subscription_games_context.side_effect = FailedParsingManifest(error_details)
+    error_details = "Unexpected backend error"
+    error_message, error_code = BackendError().message, BackendError().code
+    plugin.prepare_subscription_games_context.side_effect = BackendError(error_details)
     request = {
         "jsonrpc": "2.0",
         "id": request_id,

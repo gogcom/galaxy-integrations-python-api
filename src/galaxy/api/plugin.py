@@ -43,7 +43,7 @@ class Importer:
         notification_failure,
         notification_finished,
         complete,
-        yielding=False
+        is_generator=False
     ):
         self._task_manager = task_manger
         self._name = name
@@ -55,16 +55,13 @@ class Importer:
         self._complete = complete
 
         self._import_in_progress = False
-        self._yielding = yielding
+        self._is_generator = is_generator
 
     async def _import_element(self, id_, context_):
         try:
-            if self._yielding:
+            if self._is_generator:
                 async for element in self._get(id_, context_):
                     self._notification_success(id_, element)
-                    if element is None:
-                        logger.debug("None element yielded, import finished")
-                        break
             else:
                 element = await self._get(id_, context_)
                 self._notification_success(id_, element)
@@ -195,7 +192,7 @@ class Plugin:
             self._subscription_games_import_failure,
             self._subscription_games_import_finished,
             self.subscription_games_import_complete,
-            yielding=True
+            is_generator=True
         )
 
         # internal
@@ -1101,21 +1098,10 @@ class Plugin:
 
     async def get_subscriptions(self) -> List[Subscription]:
         """Override this method to return a list of available
-         Subscriptions available on platform.
+        Subscriptions available on platform.
         This method is called by the GOG Galaxy Client.
 
         Example of possible override of the method:
-
-        .. code-block:: python
-            :linenos:
-
-            async def get_subscriptions(self, game_id):
-                subs = []
-                platform_subs_info = await self.retrieve_platform_subs_info()
-                for sub_info in platform_subs_info:
-                    subs.append(Subscription(subscription_name=sub_info['name'], owned=sub_info['is_owned']))
-                return subs
-
         """
         raise NotImplementedError()
 
@@ -1126,31 +1112,29 @@ class Plugin:
         """Override this method to prepare context for :meth:`get_subscription_games`
         Default implementation returns None.
 
-        :param subscription_names: the names of the subscriptions for which subscriptions games are imported
+        :param subscription_names: the names of the subscriptions' for which subscriptions games are imported
         :return: context
         """
         return None
 
-    async def get_subscription_games(self, subscription_name: str, context: Any) -> AsyncGenerator[List[SubscriptionGame],None]:
-        """Override this method to return SubscriptionGames for a given subscription.
-        This method should `yield` results from a list of SubscriptionGames
+    async def get_subscription_games(self, subscription_name: str, context: Any) -> AsyncGenerator[List[SubscriptionGame], None]:
+        """Override this method to provide SubscriptionGames for a given subscription.
+        This method should `yield` a list of SubscriptionGames -> yield [sub_games]
 
-        Both this method and get_subscriptions are required to be overridden
+        Both this method and :meth:`get_subscriptions` are required to be overridden
          for the ImportSubscriptionGames feature to be recognized
 
         :param context: the value returned from :meth:`prepare_subscription_games_context`
-        :return yield List of subscription games.
+        :return a generator object that yields SubscriptionGames
 
         .. code-block:: python
             :linenos:
 
-            async def get_sub_games(sub_name: str, context: Any):
-                for i in range(10):
-                    try:
-                        games_page = await _get_subs_from_backend(sub_name, i)
-                    except KeyError:
-                        print('no more chunk pages for', sub_name)
-                        return
+            async def get_subscription_games(subscription_name: str, context: Any):
+                while True:
+                    games_page = await self._get_subscriptions_from_backend(subscription_name, i)
+                    if not games_pages:
+                        yield None
                     yield [SubGame(game['game_id'], game['game_title']) for game in games_page]
 
         """
