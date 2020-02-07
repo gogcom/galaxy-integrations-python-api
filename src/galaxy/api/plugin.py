@@ -1121,8 +1121,7 @@ class Plugin:
         """Override this method to provide SubscriptionGames for a given subscription.
         This method should `yield` a list of SubscriptionGames -> yield [sub_games]
 
-        Both this method and :meth:`get_subscriptions` are required to be overridden
-         for the ImportSubscriptionGames feature to be recognized
+        This method will only be used if :meth:`get_subscriptions` has been implemented.
 
         :param context: the value returned from :meth:`prepare_subscription_games_context`
         :return a generator object that yields SubscriptionGames
