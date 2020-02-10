@@ -129,7 +129,7 @@ class SubscriptionGamesImporter(Importer):
             logger.exception("Unexpected exception raised in %s importer", self._name)
             self._notification_failure(id_, UnknownError())
         finally:
-            self._notification_partial_finished()
+            self._notification_partial_finished(id_)
 
 
 class Plugin:
@@ -722,8 +722,13 @@ class Plugin:
             }
         )
 
-    def _subscriptions_games_partial_import_finished(self) -> None:
-        self._connection.send_notification("subscription_games_partial_import_finished", None)
+    def _subscriptions_games_partial_import_finished(self, subscription_name: str) -> None:
+        self._connection.send_notification(
+            "subscription_games_partial_import_finished",
+            {
+               "subscription_name": subscription_name
+            }
+        )
 
     def _subscription_games_import_finished(self) -> None:
         self._connection.send_notification("subscription_games_import_finished", None)

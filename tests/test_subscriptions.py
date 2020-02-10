@@ -143,7 +143,10 @@ async def test_get_subscription_games_success(plugin, read, write):
         {
             'jsonrpc': '2.0',
             'method':
-            'subscription_games_partial_import_finished', 'params': None
+                'subscription_games_partial_import_finished',
+                'params': {
+                    "subscription_name": "sub_a"
+                }
         },
         {
             "jsonrpc": "2.0",
@@ -191,7 +194,10 @@ async def test_get_subscription_games_success_empty(plugin, read, write):
         {
             'jsonrpc': '2.0',
             'method':
-                'subscription_games_partial_import_finished', 'params': None
+                'subscription_games_partial_import_finished',
+                'params': {
+                    "subscription_name": "sub_a"
+                }
         },
         {
             "jsonrpc": "2.0",
@@ -242,7 +248,10 @@ async def test_get_subscription_games_error(exception, code, message, plugin, re
         {
             'jsonrpc': '2.0',
             'method':
-                'subscription_games_partial_import_finished', 'params': None
+                'subscription_games_partial_import_finished',
+                'params': {
+                    "subscription_name": "sub_a"
+                }
         },
         {
             "jsonrpc": "2.0",
