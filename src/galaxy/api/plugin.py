@@ -1039,11 +1039,9 @@ class Plugin:
         """Override this method to handle operations after local game size import is finished (like updating cache)."""
 
     async def get_subscriptions(self) -> List[Subscription]:
-        """Override this method to return a list of available
+        """Override this method to return a list of
         Subscriptions available on platform.
         This method is called by the GOG Galaxy Client.
-
-        Example of possible override of the method:
         """
         raise NotImplementedError()
 
