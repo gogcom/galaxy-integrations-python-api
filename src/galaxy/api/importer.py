@@ -70,9 +70,9 @@ class Importer:
 
 
 class CollectionImporter(Importer):
-    def __init__(self, notification_partialy_finished, *args):
+    def __init__(self, notification_partially_finished, *args):
         super().__init__(*args)
-        self._notification_partial_finished = notification_partialy_finished
+        self._notification_partially_finished = notification_partially_finished
 
     async def _import_element(self, id_, context_):
         try:

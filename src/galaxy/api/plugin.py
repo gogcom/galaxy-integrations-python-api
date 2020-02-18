@@ -15,8 +15,8 @@ from galaxy.api.types import (
 from galaxy.task_manager import TaskManager
 from galaxy.api.importer import Importer, CollectionImporter
 
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 
 class JSONEncoder(json.JSONEncoder):
@@ -116,7 +116,6 @@ class Plugin:
         )
         self._subscription_games_importer = CollectionImporter(
             self._subscriptions_games_partial_import_finished,
-
             self._external_task_manager,
             "subscription games",
             self.get_subscription_games,
