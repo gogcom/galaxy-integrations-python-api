@@ -86,4 +86,4 @@ class CollectionImporter(Importer):
             logger.exception("Unexpected exception raised in %s importer", self._name)
             self._notification_failure(id_, UnknownError())
         finally:
-            self._notification_partial_finished(id_)
+            self._notification_partially_finished(id_)
