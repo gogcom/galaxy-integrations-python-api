@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
-from galaxy.api.consts import LicenseType, LocalGameState, PresenceState
+from galaxy.api.consts import LicenseType, LocalGameState, PresenceState, SubscriptionDiscovery
 
 
 @dataclass
@@ -217,6 +217,7 @@ class UserPresence:
     in_game_status: Optional[str] = None
     full_status: Optional[str] = None
 
+
 @dataclass
 class Subscription:
     """Information about a subscription.
@@ -224,10 +225,21 @@ class Subscription:
     :param subscription_name: name of the subscription, will also be used as its identifier.
     :param owned: whether the subscription is owned or not, None if unknown.
     :param end_time: unix timestamp of when the subscription ends, None if unknown.
+    :param subscription_discovery: combination of settings that can be manually
+        chosen by user to determine subscription handling behaviour. For example, if the integration cannot retrieve games
+        for subscription when user doesn't own it, then USER_ENABLED should not be used.
+        If the integration cannot determine subscription ownership for a user then AUTOMATIC should not be used.
+
     """
     subscription_name: str
     owned: Optional[bool] = None
     end_time: Optional[int] = None
+    subscription_discovery: SubscriptionDiscovery = SubscriptionDiscovery.AUTOMATIC | \
+                                                                 SubscriptionDiscovery.USER_ENABLED
+
+    def __post_init__(self):
+        assert self.subscription_discovery in [SubscriptionDiscovery.AUTOMATIC, SubscriptionDiscovery.USER_ENABLED,
+                                               SubscriptionDiscovery.AUTOMATIC | SubscriptionDiscovery.USER_ENABLED]
 
 
 @dataclass

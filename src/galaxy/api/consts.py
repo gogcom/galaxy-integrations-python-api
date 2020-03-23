@@ -152,3 +152,13 @@ class PresenceState(Enum):
     Online = "online"
     Offline = "offline"
     Away = "away"
+
+
+class SubscriptionDiscovery(Flag):
+    """Possible capabilities which inform what methods of subscriptions ownership detection are supported.
+
+    :param AUTOMATIC: integration can retrieve the proper status of subscription ownership.
+    :param USER_ENABLED: integration can handle override of ~class::`Subscription.owned` value to True
+    """
+    AUTOMATIC = 1
+    USER_ENABLED = 2

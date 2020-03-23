@@ -1,6 +1,7 @@
 import pytest
 
 from galaxy.api.types import Subscription, SubscriptionGame
+from galaxy.api.consts import SubscriptionDiscovery
 from galaxy.api.errors import FailedParsingManifest, BackendError, UnknownError
 from galaxy.unittest.mock import async_return_value
 
@@ -17,8 +18,8 @@ async def test_get_subscriptions_success(plugin, read, write):
 
     plugin.get_subscriptions.return_value = async_return_value([
         Subscription("1"),
-        Subscription("2", False),
-        Subscription("3", True, 1580899100)
+        Subscription("2", False, subscription_discovery=SubscriptionDiscovery.AUTOMATIC),
+        Subscription("3", True, 1580899100, SubscriptionDiscovery.USER_ENABLED)
     ])
     await plugin.run()
     plugin.get_subscriptions.assert_called_with()
@@ -30,16 +31,19 @@ async def test_get_subscriptions_success(plugin, read, write):
             "result": {
                 "subscriptions": [
                     {
-                        "subscription_name": "1"
+                        "subscription_name": "1",
+                        'subscription_discovery': 3
                     },
                     {
                         "subscription_name": "2",
-                        "owned": False
+                        "owned": False,
+                        'subscription_discovery': 1
                     },
                     {
                         "subscription_name": "3",
                         "owned": True,
-                        "end_time": 1580899100
+                        "end_time": 1580899100,
+                        'subscription_discovery': 2
                     }
                 ]
             }
@@ -76,6 +80,7 @@ async def test_get_subscriptions_failure_generic(plugin, read, write, error, cod
             }
         }
     ]
+
 
 @pytest.mark.asyncio
 async def test_get_subscription_games_success(plugin, read, write):
