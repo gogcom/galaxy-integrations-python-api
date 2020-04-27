@@ -4,10 +4,10 @@ Platform ID list for GOG Galaxy 2.0 Integrations
 
 | ID | Name |
 | --- | --- |
+| test | Testing purposes |
 | steam	| Steam |
 | psn	| PlayStation Network |
 | xboxone	| Xbox Live |
-| generic	| Manually added games |
 | origin	| Origin |
 | uplay	| Uplay |
 | battlenet	| Battle.net |

@@ -36,20 +36,31 @@ Communication between an integration and the client is also possible with the us
 import sys
 from galaxy.api.plugin import Plugin, create_and_run_plugin
 from galaxy.api.consts import Platform
+from galaxy.api.types import Authentication, Game, LicenseInfo, LicenseType
+
 
 class PluginExample(Plugin):
     def __init__(self, reader, writer, token):
         super().__init__(
-            Platform.Generic, # Choose platform from available list
-            "0.1", # Version
+            Platform.Test,  # choose platform from available list
+            "0.1",  # version
             reader,
             writer,
             token
         )
 
     # implement methods
+
+    # required
     async def authenticate(self, stored_credentials=None):
-        pass
+        return Authentication('test_user_id', 'Test User Name')
+
+    # required
+    async def get_owned_games(self):
+        return [
+            Game('test', 'The Test', None, LicenseInfo(LicenseType.SinglePurchase))
+        ]
+
 
 def main():
     create_and_run_plugin(PluginExample, sys.argv)
@@ -76,6 +87,20 @@ In order to be found by GOG Galaxy 2.0 an integration folder should be placed in
 
     `~/Library/Application Support/GOG.com/Galaxy/plugins/installed`
 
+### Logging
+<a href='https://docs.python.org/3.7/howto/logging.html'>Root logger</a> is already setup by GOG Galaxy to store rotated log files in:
+
+- Windows:
+
+    `%programdata%\GOG.com\Galaxy\logs`
+
+- macOS:
+
+    `/Users/Shared/GOG.com/Galaxy/Logs`
+
+Plugin logs are kept in `plugin-<platform>-<guid>.log`.
+When debugging, inspecting the other side of communication in the `GalaxyClient.log` can be helpful as well.
+
 ### Manifest
 
 <a name="deploy-manifest"></a>
@@ -84,8 +109,8 @@ Obligatory JSON file to be placed in an integration folder.
 ```json
 {
     "name": "Example plugin",
-    "platform": "generic",
-    "guid": "UNIQUE-GUID",
+    "platform": "test",
+    "guid": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
     "version": "0.1",
     "description": "Example plugin",
     "author": "Name",
@@ -97,9 +122,8 @@ Obligatory JSON file to be placed in an integration folder.
 
 | property      | description |
 |---------------|---|
-| `guid`        |   |
-| `description` |   |
-| `url`         |   |
+| `guid`        | custom Globally Unique Identifier |
+| `version`     | the same string as `version` in `Plugin` constructor |
 | `script`      | path of the entry point module, relative to the integration folder |
 
 ### Dependencies

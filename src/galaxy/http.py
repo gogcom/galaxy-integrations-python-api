@@ -6,7 +6,6 @@ Exemplary simple web service could looks like:
 
     .. code-block:: python
 
-        import logging
         from galaxy.http import create_client_session, handle_exception
 
         class BackendClient:
