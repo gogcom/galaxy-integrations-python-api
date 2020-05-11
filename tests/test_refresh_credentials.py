@@ -4,7 +4,7 @@ import asyncio
 from galaxy.unittest.mock import async_return_value
 from tests import create_message, get_messages
 from galaxy.api.errors import (
-    BackendNotAvailable, BackendTimeout, BackendError, InvalidCredentials, NetworkError, AccessDenied
+    BackendNotAvailable, BackendTimeout, BackendError, InvalidCredentials, NetworkError, AccessDenied, UnknownError
 )
 from galaxy.api.jsonrpc import JsonRpcError
 @pytest.mark.asyncio
@@ -40,7 +40,7 @@ async def test_refresh_credentials_success(plugin, read, write):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("exception", [
-    BackendNotAvailable, BackendTimeout, BackendError, InvalidCredentials, NetworkError, AccessDenied
+    BackendNotAvailable, BackendTimeout, BackendError, InvalidCredentials, NetworkError, AccessDenied, UnknownError
 ])
 async def test_refresh_credentials_failure(exception, plugin, read, write):
 

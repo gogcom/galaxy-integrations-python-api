@@ -360,7 +360,8 @@ class Connection():
 
     @staticmethod
     def _log_error(response, error, sensitive_params):
-        data = anonymise_sensitive_params(error.data, sensitive_params)
+        params = error.data if error.data is not None else {}
+        data = anonymise_sensitive_params(params, sensitive_params)
         logger.info("Handling error: id=%s, code=%s, description=%s, data=%s",
             response.id, error.code, error.message, data
         )
