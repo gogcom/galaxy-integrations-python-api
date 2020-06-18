@@ -80,3 +80,12 @@ Platform ID list for GOG Galaxy 2.0 Integrations
 | nds	| Nintendo DS |
 | 3ds	| Nintendo 3DS |
 | pathofexile | Path of Exile |
+| twitch | Twitch |
+| minecraft | Minecraft |
+| gamesessions | GameSessions |
+| nuuvem | Nuuvem |
+| fxstore | FX Store |
+| indiegala | IndieGala |
+| playfire | Playfire |
+| oculus | Oculus |
+| rockstart | Rockstar |
