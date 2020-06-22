@@ -1027,10 +1027,9 @@ class Plugin:
           It is preferable to avoid iterating over local game files when overriding this method.
           If possible, please use a more efficient way of game size retrieval.
 
+        :param game_id: the id of the installed game
         :param context: the value returned from :meth:`prepare_local_size_context`
-        :return: game size (in bytes) or `None` if game size cannot be determined;
-            '0' if the game is not installed, or if it is not present locally (e.g. installed
-            on another machine and accessible via remote connection, playable via web browser etc.)
+        :return: the size of the game on a user-owned storage device (in bytes) or `None` if the size cannot be determined
         """
         raise NotImplementedError()
 
