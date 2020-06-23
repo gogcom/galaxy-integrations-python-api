@@ -88,4 +88,4 @@ Platform ID list for GOG Galaxy 2.0 Integrations
 | indiegala | IndieGala |
 | playfire | Playfire |
 | oculus | Oculus |
-| rockstart | Rockstar |
+| rockstar | Rockstar |
