@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: GOG GALAXY 2.0 issue
+    url: https://mantis2.gog.com/
+    about: Report issues related to GOG GALAXY 2.0, official integrations or the whole ecosystem
+  - name: Platform ID request
+    url: https://github.com/gogcom/galaxy-integrations-python-api/issues/160
+    about: Report missing platform id
+  - name: Community integrations
+    url: https://github.com/Mixaill/awesome-gog-galaxy
+    about: Find integrations and their maintainers, request new integrations or report issues related to unofficial integrations.
