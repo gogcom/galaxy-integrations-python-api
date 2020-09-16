@@ -19,7 +19,7 @@ async def test_get_local_size_success(plugin, read, write):
     }
     read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
     plugin.get_local_size.side_effect = [
-        async_return_value(100000000000),
+        async_return_value(100000000000, 1),
         async_return_value(None),
         async_return_value(3333333)
     ]
@@ -89,12 +89,15 @@ async def test_get_local_size_error(exception, code, message, plugin, read, writ
     plugin.get_local_size.assert_called()
     plugin.local_size_import_complete.assert_called_once_with()
 
-    assert get_messages(write) == [
-        {
-            "jsonrpc": "2.0",
-            "id": request_id,
-            "result": None
-        },
+    direct_response = {
+        "jsonrpc": "2.0",
+        "id": request_id,
+        "result": None
+    }
+    responses = get_messages(write)
+    assert direct_response in responses
+    responses.remove(direct_response)
+    assert responses == [
         {
             "jsonrpc": "2.0",
             "method": "local_size_import_failure",
@@ -145,6 +148,7 @@ async def test_prepare_get_local_size_context_error(plugin, read, write):
 @pytest.mark.asyncio
 async def test_import_already_in_progress_error(plugin, read, write):
     plugin.prepare_local_size_context.return_value = async_return_value(None)
+    plugin.get_local_size.return_value = async_return_value(100, 5)
     requests = [
         {
             "jsonrpc": "2.0",
@@ -185,4 +189,3 @@ async def test_import_already_in_progress_error(plugin, read, write):
             "message": "Import already in progress"
         }
     } in responses
-

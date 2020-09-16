@@ -87,3 +87,16 @@ class CollectionImporter(Importer):
             self._notification_failure(id_, UnknownError())
         finally:
             self._notification_partially_finished(id_)
+
+
+class SynchroneousImporter(Importer):
+    async def _import_elements(self, ids_, context_):
+        try:
+            for id_ in ids_:
+                await self._import_element(id_, context_)
+            self._notification_finished()
+            self._complete()
+        except asyncio.CancelledError:
+            logger.debug("Importing %s cancelled", self._name)
+        finally:
+            self._import_in_progress = False
