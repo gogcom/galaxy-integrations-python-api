@@ -18,7 +18,9 @@ async def test_get_friends_success(plugin, read, write):
     read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
     plugin.get_friends.return_value = async_return_value([
         UserInfo("3", "Jan", "https://avatar.url/u3", None),
-        UserInfo("5", "Ola", None, "https://profile.url/u5")
+        UserInfo("5", "Ola", None, "https://profile.url/u5"),
+        UserInfo("6", "Ola2", None),
+        UserInfo("7", "Ola3"),
     ])
     await plugin.run()
     plugin.get_friends.assert_called_with()
@@ -30,7 +32,9 @@ async def test_get_friends_success(plugin, read, write):
             "result": {
                 "friend_info_list": [
                     {"user_id": "3", "user_name": "Jan", "avatar_url": "https://avatar.url/u3"},
-                    {"user_id": "5", "user_name": "Ola", "profile_url": "https://profile.url/u5"}
+                    {"user_id": "5", "user_name": "Ola", "profile_url": "https://profile.url/u5"},
+                    {"user_id": "6", "user_name": "Ola2"},
+                    {"user_id": "7", "user_name": "Ola3"},
                 ]
             }
         }

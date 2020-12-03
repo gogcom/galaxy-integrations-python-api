@@ -166,8 +166,8 @@ class UserInfo:
     """
     user_id: str
     user_name: str
-    avatar_url: Optional[str]
-    profile_url: Optional[str]
+    avatar_url: Optional[str] = None
+    profile_url: Optional[str] = None
 
 
 @dataclass
