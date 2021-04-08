@@ -89,3 +89,4 @@ Platform ID list for GOG Galaxy 2.0 Integrations
 | playfire | Playfire |
 | oculus | Oculus |
 | rockstar | Rockstar |
+| magenta | Magenta Gaming |
