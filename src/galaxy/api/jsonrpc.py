@@ -306,7 +306,7 @@ class Connection():
             if sensitive:
                 logger.debug("Sending %d bytes of data", len(data))
             else:
-                logging.debug("Sending data: %s", line)
+                logger.debug("Sending data: %s", line)
             self._writer.write(data)
         except TypeError as error:
             logger.error(str(error))

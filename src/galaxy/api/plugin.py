@@ -292,7 +292,7 @@ class Plugin:
         await self._external_task_manager.wait()
         await self._internal_task_manager.wait()
         await self._connection.wait_closed()
-        logger.debug("Plugin closed")
+        logger.info("Plugin closed")
 
     def create_task(self, coro, description):
         """Wrapper around asyncio.create_task - takes care of canceling tasks on shutdown"""
