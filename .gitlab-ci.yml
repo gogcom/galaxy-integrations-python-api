@@ -7,7 +7,7 @@ stages:
 test_package:
   stage: test
   script:
-    - pip install -r requirements.txt
+    - pip install -r requirements-dev.txt
     - pytest
   except:
     - tags
