@@ -34,10 +34,6 @@ class NetworkError(ApplicationError):
     def __init__(self, data=None):
         super().__init__(101, "Network error", data)
 
-class LoggedInElsewhere(ApplicationError):
-    def __init__(self, data=None):
-        super().__init__(102, "Logged in elsewhere", data)
-
 class ProtocolError(ApplicationError):
     def __init__(self, data=None):
         super().__init__(103, "Protocol error", data)

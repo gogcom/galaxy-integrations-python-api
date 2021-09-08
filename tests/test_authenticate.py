@@ -2,8 +2,16 @@ import pytest
 
 from galaxy.api.types import Authentication
 from galaxy.api.errors import (
-    UnknownError, InvalidCredentials, NetworkError, LoggedInElsewhere, ProtocolError,
-    BackendNotAvailable, BackendTimeout, BackendError, TemporaryBlocked, Banned, AccessDenied
+    UnknownError,
+    BackendNotAvailable,
+    BackendTimeout,
+    BackendError,
+    InvalidCredentials,
+    NetworkError,
+    ProtocolError,
+    TemporaryBlocked,
+    Banned,
+    AccessDenied,
 )
 from galaxy.unittest.mock import async_return_value, skip_loop
 
@@ -42,7 +50,6 @@ async def test_success(plugin, read, write):
     pytest.param(BackendError, 4, "Backend error", id="backend_error"),
     pytest.param(InvalidCredentials, 100, "Invalid credentials", id="invalid_credentials"),
     pytest.param(NetworkError, 101, "Network error", id="network_error"),
-    pytest.param(LoggedInElsewhere, 102, "Logged in elsewhere", id="logged_elsewhere"),
     pytest.param(ProtocolError, 103, "Protocol error", id="protocol_error"),
     pytest.param(TemporaryBlocked, 104, "Temporary blocked", id="temporary_blocked"),
     pytest.param(Banned, 105, "Banned", id="banned"),
