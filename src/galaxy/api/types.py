@@ -33,7 +33,7 @@ class Cookie:
 
 @dataclass
 class NextStep:
-    """Return this from :meth:`.authenticate` or :meth:`.pass_login_credentials` to open client built-in browser with given url.
+    R"""Return this from :meth:`.authenticate` or :meth:`.pass_login_credentials` to open client built-in browser with given url.
     For example:
 
     .. code-block:: python
