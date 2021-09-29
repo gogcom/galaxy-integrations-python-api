@@ -1129,8 +1129,11 @@ def create_and_run_plugin(plugin_class, argv):
             async with plugin_class(reader, writer, token) as plugin:
                 await plugin.run()
         finally:
-            writer.close()
-            await writer.wait_closed()
+            try:
+                writer.close()
+                await writer.wait_closed()
+            except (ConnectionAbortedError, ConnectionResetError):
+                pass
 
     try:
         if sys.platform == "win32":
