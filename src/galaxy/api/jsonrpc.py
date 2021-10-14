@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class JsonRpcError(Exception):
     def __init__(self, code, message, data=None):
         self.code = code
-        self.message = message
+        self.message = str(message)
         self.data = data
         super().__init__()
 
@@ -33,29 +33,36 @@ class JsonRpcError(Exception):
 
         return obj
 
+
 class ParseError(JsonRpcError):
-    def __init__(self):
-        super().__init__(-32700, "Parse error")
+    def __init__(self, message="Parse error"):
+        super().__init__(-32700, message)
+
 
 class InvalidRequest(JsonRpcError):
-    def __init__(self):
-        super().__init__(-32600, "Invalid Request")
+    def __init__(self, message="Invalid Request"):
+        super().__init__(-32600, message)
+
 
 class MethodNotFound(JsonRpcError):
-    def __init__(self):
-        super().__init__(-32601, "Method not found")
+    def __init__(self, message="Method not found"):
+        super().__init__(-32601, message)
+
 
 class InvalidParams(JsonRpcError):
-    def __init__(self):
-        super().__init__(-32602, "Invalid params")
+    def __init__(self, message="Invalid params"):
+        super().__init__(-32602, message)
+
 
 class Timeout(JsonRpcError):
-    def __init__(self):
-        super().__init__(-32000, "Method timed out")
+    def __init__(self, message="Method timed out"):
+        super().__init__(-32000, message)
+
 
 class Aborted(JsonRpcError):
-    def __init__(self):
-        super().__init__(-32001, "Method aborted")
+    def __init__(self, message="Method aborted"):
+        super().__init__(-32001, message)
+
 
 class ApplicationError(JsonRpcError):
     def __init__(self, code, message, data):
@@ -63,9 +70,11 @@ class ApplicationError(JsonRpcError):
             raise ValueError("The error code in reserved range")
         super().__init__(code, message, data)
 
+
 class UnknownError(ApplicationError):
-    def __init__(self, data=None):
-        super().__init__(0, "Unknown error", data)
+    def __init__(self, message="Unknown error", data=None):
+        super().__init__(0, message, data)
+
 
 Request = namedtuple("Request", ["method", "params", "id"], defaults=[{}, None])
 Response = namedtuple("Response", ["id", "result", "error"], defaults=[None, {}, {}])

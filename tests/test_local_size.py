@@ -122,7 +122,7 @@ async def test_prepare_get_local_size_context_error(plugin, read, write):
     request_id = "31415"
     error_details = "Unexpected syntax"
     error_message, error_code = FailedParsingManifest().message, FailedParsingManifest().code
-    plugin.prepare_local_size_context.side_effect = FailedParsingManifest(error_details)
+    plugin.prepare_local_size_context.side_effect = FailedParsingManifest(data=error_details)
     request = {
         "jsonrpc": "2.0",
         "id": request_id,

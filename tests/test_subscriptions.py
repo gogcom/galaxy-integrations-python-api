@@ -271,7 +271,7 @@ async def test_prepare_get_subscription_games_context_error(plugin, read, write)
     request_id = "31415"
     error_details = "Unexpected backend error"
     error_message, error_code = BackendError().message, BackendError().code
-    plugin.prepare_subscription_games_context.side_effect = BackendError(error_details)
+    plugin.prepare_subscription_games_context.side_effect = BackendError(data=error_details)
     request = {
         "jsonrpc": "2.0",
         "id": request_id,
