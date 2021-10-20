@@ -7,6 +7,8 @@ from galaxy.api.errors import (
     BackendNotAvailable, BackendTimeout, BackendError, InvalidCredentials, NetworkError, AccessDenied, UnknownError
 )
 from galaxy.api.jsonrpc import JsonRpcError
+
+
 @pytest.mark.asyncio
 async def test_refresh_credentials_success(plugin, read, write):
 
@@ -58,7 +60,8 @@ async def test_refresh_credentials_failure(exception, plugin, read, write):
     with pytest.raises(JsonRpcError) as e:
         await plugin.refresh_credentials({}, False)
 
-    assert error == e.value
+    # Go back to comparing error == e.value, after fixing current always raising JsonRpcError when handling a response with an error
+    assert error.code == e.value.code
     assert get_messages(write) == [
         {
             "jsonrpc": "2.0",

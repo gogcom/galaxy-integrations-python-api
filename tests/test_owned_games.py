@@ -90,7 +90,8 @@ async def test_failure(plugin, read, write):
             "id": "3",
             "error": {
                 "code": 0,
-                "message": "Unknown error"
+                "message": "Unknown error",
+                "data": {"internal_type": "UnknownError"}
             }
         }
     ]

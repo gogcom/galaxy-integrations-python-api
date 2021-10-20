@@ -43,19 +43,19 @@ async def test_success(plugin, read, write):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("error,code,message", [
-    pytest.param(UnknownError, 0, "Unknown error", id="unknown_error"),
-    pytest.param(BackendNotAvailable, 2, "Backend not available", id="backend_not_available"),
-    pytest.param(BackendTimeout, 3, "Backend timed out", id="backend_timeout"),
-    pytest.param(BackendError, 4, "Backend error", id="backend_error"),
-    pytest.param(InvalidCredentials, 100, "Invalid credentials", id="invalid_credentials"),
-    pytest.param(NetworkError, 101, "Network error", id="network_error"),
-    pytest.param(ProtocolError, 103, "Protocol error", id="protocol_error"),
-    pytest.param(TemporaryBlocked, 104, "Temporary blocked", id="temporary_blocked"),
-    pytest.param(Banned, 105, "Banned", id="banned"),
-    pytest.param(AccessDenied, 106, "Access denied", id="access_denied"),
+@pytest.mark.parametrize("error,code,message, internal_type", [
+    pytest.param(UnknownError, 0, "Unknown error", "UnknownError"),
+    pytest.param(BackendNotAvailable, 2, "Backend not available", "BackendNotAvailable"),
+    pytest.param(BackendTimeout, 3, "Backend timed out", "BackendTimeout"),
+    pytest.param(BackendError, 4, "Backend error", "BackendError"),
+    pytest.param(InvalidCredentials, 100, "Invalid credentials", "InvalidCredentials"),
+    pytest.param(NetworkError, 101, "Network error", "NetworkError"),
+    pytest.param(ProtocolError, 103, "Protocol error", "ProtocolError"),
+    pytest.param(TemporaryBlocked, 104, "Temporary blocked", "TemporaryBlocked"),
+    pytest.param(Banned, 105, "Banned", "Banned"),
+    pytest.param(AccessDenied, 106, "Access denied", "AccessDenied"),
 ])
-async def test_failure(plugin, read, write, error, code, message):
+async def test_failure(plugin, read, write, error, code, message, internal_type):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
@@ -73,7 +73,8 @@ async def test_failure(plugin, read, write, error, code, message):
             "id": "3",
             "error": {
                 "code": code,
-                "message": message
+                "message": message,
+                "data" : {"internal_type" : internal_type}
             }
         }
     ]

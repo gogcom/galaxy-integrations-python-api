@@ -1,6 +1,6 @@
 import asyncio
 from collections import namedtuple
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 import logging
 import inspect
 import json
@@ -16,7 +16,12 @@ class JsonRpcError(Exception):
     def __init__(self, code, message, data=None):
         self.code = code
         self.message = str(message)
-        self.data = data
+        self.data = {}
+        if data is not None:
+            if not isinstance(data, Mapping):
+                raise TypeError(f"Data parameter should be a mapping, got this instead: {data}")
+            self.data = data
+        self.data.update({"internal_type": type(self).__name__})
         super().__init__()
 
     def __eq__(self, other):
@@ -25,43 +30,41 @@ class JsonRpcError(Exception):
     def json(self):
         obj = {
             "code": self.code,
-            "message": self.message
+            "message": self.message,
+            "data": self.data
         }
-
-        if self.data is not None:
-            obj["data"] = self.data
 
         return obj
 
 
 class ParseError(JsonRpcError):
-    def __init__(self, message="Parse error"):
-        super().__init__(-32700, message)
+    def __init__(self, message="Parse error", data=None):
+        super().__init__(-32700, message, data)
 
 
 class InvalidRequest(JsonRpcError):
-    def __init__(self, message="Invalid Request"):
-        super().__init__(-32600, message)
+    def __init__(self, message="Invalid Request", data=None):
+        super().__init__(-32600, message, data)
 
 
 class MethodNotFound(JsonRpcError):
-    def __init__(self, message="Method not found"):
-        super().__init__(-32601, message)
+    def __init__(self, message="Method not found", data=None):
+        super().__init__(-32601, message, data)
 
 
 class InvalidParams(JsonRpcError):
-    def __init__(self, message="Invalid params"):
-        super().__init__(-32602, message)
+    def __init__(self, message="Invalid params", data=None):
+        super().__init__(-32602, message, data)
 
 
 class Timeout(JsonRpcError):
-    def __init__(self, message="Method timed out"):
-        super().__init__(-32000, message)
+    def __init__(self, message="Method timed out", data=None):
+        super().__init__(-32000, message, data)
 
 
 class Aborted(JsonRpcError):
-    def __init__(self, message="Method aborted"):
-        super().__init__(-32001, message)
+    def __init__(self, message="Method aborted", data=None):
+        super().__init__(-32001, message, data)
 
 
 class ApplicationError(JsonRpcError):

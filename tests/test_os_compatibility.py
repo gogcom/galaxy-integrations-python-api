@@ -71,11 +71,11 @@ async def test_get_os_compatibility_success(plugin, read, write):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("exception,code,message", [
-    (BackendError, 4, "Backend error"),
-    (KeyError, 0, "Unknown error")
+@pytest.mark.parametrize("exception,code,message,internal_type", [
+    (BackendError, 4, "Backend error", "BackendError"),
+    (KeyError, 0, "Unknown error", "UnknownError")
 ])
-async def test_get_os_compatibility_error(exception, code, message, plugin, read, write):
+async def test_get_os_compatibility_error(exception, code, message, internal_type, plugin, read, write):
     game_id = "6"
     request_id = "55"
     plugin.prepare_os_compatibility_context.return_value = async_return_value(None)
@@ -104,7 +104,8 @@ async def test_get_os_compatibility_error(exception, code, message, plugin, read
                 "game_id": game_id,
                 "error": {
                     "code": code,
-                    "message": message
+                    "message": message,
+                    "data": {"internal_type": internal_type}
                 }
             }
         },
@@ -135,7 +136,8 @@ async def test_prepare_get_os_compatibility_context_error(plugin, read, write):
             "id": request_id,
             "error": {
                 "code": 4,
-                "message": "Backend error"
+                "message": "Backend error",
+                "data": {"internal_type": "BackendError"}
             }
         }
     ]
@@ -181,7 +183,8 @@ async def test_import_already_in_progress_error(plugin, read, write):
         "id": "4",
         "error": {
             "code": 600,
-            "message": "Import already in progress"
+            "message": "Import already in progress",
+            "data": {"internal_type": "ImportInProgress"}
         }
     } in responses
 

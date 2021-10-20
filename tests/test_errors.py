@@ -3,6 +3,50 @@ import galaxy.api.errors as errors
 import galaxy.api.jsonrpc as jsonrpc
 
 
+@pytest.mark.parametrize("data", [
+    {"key1": "value", "key2": "value2"},
+    {},
+    {"key1": ["list", "of", "things"], "key2": None},
+    {"key1": ("tuple", Exception)},
+])
+def test_valid_error_data(data):
+    test_message = "Test error message"
+    test_code = 1
+    err_obj = jsonrpc.JsonRpcError(code=test_code, message=test_message, data=data)
+    data.update({"internal_type": "JsonRpcError"})
+    expected_json = {"code": 1, "data": data, "message": "Test error message"}
+    assert err_obj.json() == expected_json
+
+
+def test_error_default_data():
+    test_message = "Test error message"
+    test_code = 1
+    err_obj = jsonrpc.JsonRpcError(code=test_code, message=test_message)
+    expected_json = {"code": test_code, "data": {"internal_type": "JsonRpcError"}, "message": test_message}
+    assert err_obj.json() == expected_json
+
+
+@pytest.mark.parametrize("data", [
+    123,
+    ["not", "a", "mapping"],
+    "nor is this"
+])
+def test_invalid_error_data(data):
+    test_message = "Test error message"
+    test_code = 1
+    with pytest.raises(TypeError):
+        jsonrpc.JsonRpcError(code=test_code, message=test_message, data=data)
+
+
+def test_error_override_internal_type():
+    test_message = "Test error message"
+    test_code = 1
+    test_data = {"internal_type": "SomeUserProvidedType", "details": "some more data"}
+    err_obj = jsonrpc.JsonRpcError(code=test_code, message=test_message, data=test_data)
+    expected_json = {"code": test_code, "data": {"details": "some more data", "internal_type": "JsonRpcError"}, "message": test_message}
+    assert err_obj.json() == expected_json
+
+
 @pytest.mark.parametrize("error, expected_error_msg", [
     (errors.AuthenticationRequired, "Authentication required"),
     (errors.BackendNotAvailable, "Backend not available"),

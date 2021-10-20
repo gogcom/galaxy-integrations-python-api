@@ -69,11 +69,11 @@ async def test_get_local_size_success(plugin, read, write):
     ]
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("exception,code,message", [
-    (FailedParsingManifest, 200, "Failed parsing manifest"),
-    (KeyError, 0, "Unknown error")
+@pytest.mark.parametrize("exception,code,message,internal_type", [
+    (FailedParsingManifest, 200, "Failed parsing manifest", "FailedParsingManifest"),
+    (KeyError, 0, "Unknown error", "UnknownError")
 ])
-async def test_get_local_size_error(exception, code, message, plugin, read, write):
+async def test_get_local_size_error(exception, code, message, internal_type, plugin, read, write):
     game_id = "6"
     request_id = "55"
     plugin.prepare_local_size_context.return_value = async_return_value(None)
@@ -105,7 +105,10 @@ async def test_get_local_size_error(exception, code, message, plugin, read, writ
                 "game_id": game_id,
                 "error": {
                     "code": code,
-                    "message": message
+                    "message": message,
+                    "data": {
+                        "internal_type": internal_type
+                    }
                 }
             }
         },
@@ -120,7 +123,7 @@ async def test_get_local_size_error(exception, code, message, plugin, read, writ
 @pytest.mark.asyncio
 async def test_prepare_get_local_size_context_error(plugin, read, write):
     request_id = "31415"
-    error_details = "Unexpected syntax"
+    error_details = {"Details": "Unexpected syntax"}
     error_message, error_code = FailedParsingManifest().message, FailedParsingManifest().code
     plugin.prepare_local_size_context.side_effect = FailedParsingManifest(data=error_details)
     request = {
@@ -131,7 +134,6 @@ async def test_prepare_get_local_size_context_error(plugin, read, write):
     }
     read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
     await plugin.run()
-
     assert get_messages(write) == [
         {
             "jsonrpc": "2.0",
@@ -139,7 +141,10 @@ async def test_prepare_get_local_size_context_error(plugin, read, write):
             "error": {
                 "code": error_code,
                 "message": error_message,
-                "data": error_details
+                "data": {
+                    "internal_type": "FailedParsingManifest",
+                    "Details": "Unexpected syntax"
+                }
             }
         }
     ]
@@ -186,6 +191,7 @@ async def test_import_already_in_progress_error(plugin, read, write):
         "id": "4",
         "error": {
             "code": 600,
-            "message": "Import already in progress"
+            "message": "Import already in progress",
+            "data": {"internal_type": "ImportInProgress"}
         }
     } in responses

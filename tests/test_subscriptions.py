@@ -53,13 +53,13 @@ async def test_get_subscriptions_success(plugin, read, write):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "error,code,message",
+    "error,code,message,internal_type",
     [
-        pytest.param(UnknownError, 0, "Unknown error", id="unknown_error"),
-        pytest.param(FailedParsingManifest, 200, "Failed parsing manifest", id="failed_parsing")
+        pytest.param(UnknownError, 0, "Unknown error",  "UnknownError", id="unknown_error"),
+        pytest.param(FailedParsingManifest, 200, "Failed parsing manifest", "FailedParsingManifest", id="failed_parsing")
     ],
 )
-async def test_get_subscriptions_failure_generic(plugin, read, write, error, code, message):
+async def test_get_subscriptions_failure_generic(plugin, read, write, error, code, message, internal_type):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
@@ -76,6 +76,7 @@ async def test_get_subscriptions_failure_generic(plugin, read, write, error, cod
             "id": "3",
             "error": {
                 "code": code,
+                "data": {"internal_type": internal_type},
                 "message": message
             }
         }
@@ -212,11 +213,11 @@ async def test_get_subscription_games_success_empty(plugin, read, write):
     ]
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("exception,code,message", [
-    (BackendError, 4, "Backend error"),
-    (KeyError, 0, "Unknown error")
+@pytest.mark.parametrize("exception,code,message,internal_type", [
+    (BackendError, 4, "Backend error", "BackendError"),
+    (KeyError, 0, "Unknown error", "UnknownError")
 ])
-async def test_get_subscription_games_error(exception, code, message, plugin, read, write):
+async def test_get_subscription_games_error(exception, code, message, internal_type, plugin, read, write):
     plugin.prepare_subscription_games_context.return_value = async_return_value(None)
     request = {
         "jsonrpc": "2.0",
@@ -246,7 +247,8 @@ async def test_get_subscription_games_error(exception, code, message, plugin, re
                 "subscription_name": "sub_a",
                 "error": {
                     "code": code,
-                    "message": message
+                    "message": message,
+                    "data": {"internal_type": internal_type}
                 }
             }
         },
@@ -269,7 +271,7 @@ async def test_get_subscription_games_error(exception, code, message, plugin, re
 @pytest.mark.asyncio
 async def test_prepare_get_subscription_games_context_error(plugin, read, write):
     request_id = "31415"
-    error_details = "Unexpected backend error"
+    error_details = {"Details": "Unexpected backend error"}
     error_message, error_code = BackendError().message, BackendError().code
     plugin.prepare_subscription_games_context.side_effect = BackendError(data=error_details)
     request = {
@@ -280,7 +282,6 @@ async def test_prepare_get_subscription_games_context_error(plugin, read, write)
     }
     read.side_effect = [async_return_value(create_message(request)), async_return_value(b"", 10)]
     await plugin.run()
-
     assert get_messages(write) == [
         {
             "jsonrpc": "2.0",
@@ -288,7 +289,10 @@ async def test_prepare_get_subscription_games_context_error(plugin, read, write)
             "error": {
                 "code": error_code,
                 "message": error_message,
-                "data": error_details
+                "data": {
+                    "internal_type": "BackendError",
+                    "Details": "Unexpected backend error"
+                }
             }
         }
     ]
@@ -334,7 +338,8 @@ async def test_import_already_in_progress_error(plugin, read, write):
         "id": "4",
         "error": {
             "code": 600,
-            "message": "Import already in progress"
+            "message": "Import already in progress",
+            "data": {"internal_type": "ImportInProgress"}
         }
     } in responses
 

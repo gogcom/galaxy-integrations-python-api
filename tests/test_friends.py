@@ -61,6 +61,7 @@ async def test_get_friends_failure(plugin, read, write):
             "error": {
                 "code": 0,
                 "message": "Unknown error",
+                "data": {"internal_type": "UnknownError"}
             }
         }
     ]

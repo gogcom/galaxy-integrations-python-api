@@ -51,13 +51,13 @@ async def test_success(plugin, read, write):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "error,code,message",
+    "error,code,message, internal_type",
     [
-        pytest.param(UnknownError, 0, "Unknown error", id="unknown_error"),
-        pytest.param(FailedParsingManifest, 200, "Failed parsing manifest", id="failed_parsing")
+        pytest.param(UnknownError, 0, "Unknown error", "UnknownError", id="unknown_error"),
+        pytest.param(FailedParsingManifest, 200, "Failed parsing manifest", "FailedParsingManifest", id="failed_parsing")
     ],
 )
-async def test_failure(plugin, read, write, error, code, message):
+async def test_failure(plugin, read, write, error, code, message, internal_type):
     request = {
         "jsonrpc": "2.0",
         "id": "3",
@@ -74,7 +74,8 @@ async def test_failure(plugin, read, write, error, code, message):
             "id": "3",
             "error": {
                 "code": code,
-                "message": message
+                "message": message,
+                "data" : {"internal_type" : internal_type}
             }
         }
     ]

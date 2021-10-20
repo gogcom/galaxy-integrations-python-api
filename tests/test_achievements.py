@@ -79,11 +79,11 @@ async def test_get_unlocked_achievements_success(plugin, read, write):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("exception,code,message", [
-    (BackendError, 4, "Backend error"),
-    (KeyError, 0, "Unknown error")
+@pytest.mark.parametrize("exception,code,message,internal_type", [
+    (BackendError, 4, "Backend error", "BackendError"),
+    (KeyError, 0, "Unknown error", "UnknownError")
 ])
-async def test_get_unlocked_achievements_error(exception, code, message, plugin, read, write):
+async def test_get_unlocked_achievements_error(exception, code, message, internal_type, plugin, read, write):
     plugin.prepare_achievements_context.return_value = async_return_value(None)
     request = {
         "jsonrpc": "2.0",
@@ -113,7 +113,8 @@ async def test_get_unlocked_achievements_error(exception, code, message, plugin,
                 "game_id": "14",
                 "error": {
                     "code": code,
-                    "message": message
+                    "message": message,
+                    "data": {"internal_type" : internal_type}
                 }
             }
         },
@@ -145,7 +146,8 @@ async def test_prepare_get_unlocked_achievements_context_error(plugin, read, wri
             "id": "3",
             "error": {
                 "code": 4,
-                "message": "Backend error"
+                "message": "Backend error",
+                "data": {"internal_type": "BackendError"}
             }
         }
     ]
@@ -192,7 +194,8 @@ async def test_import_in_progress(plugin, read, write):
         "id": "4",
         "error": {
             "code": 600,
-            "message": "Import already in progress"
+            "message": "Import already in progress",
+            "data": {"internal_type": "ImportInProgress"}
         }
     } in messages
 
