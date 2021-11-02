@@ -23,14 +23,14 @@ class BackendError(ApplicationError):
         super().__init__(4, message, data)
 
 
-class UnknownBackendResponse(ApplicationError):
-    def __init__(self, message="Backend responded in unknown way", data=None):
-        super().__init__(4, message, data)
-
-
 class TooManyRequests(ApplicationError):
     def __init__(self, message="Too many requests. Try again later", data=None):
         super().__init__(5, message, data)
+
+
+class UnknownBackendResponse(ApplicationError):
+    def __init__(self, message="Backend responded in unknown way", data=None):
+        super().__init__(6, message, data)
 
 
 class InvalidCredentials(ApplicationError):
