@@ -1063,7 +1063,7 @@ class Plugin:
         This method will only be used if :meth:`get_subscriptions` has been implemented.
 
         :param context: the value returned from :meth:`prepare_subscription_games_context`
-        :return a generator object that yields SubscriptionGames
+        :return: a generator object that yields SubscriptionGames
 
         .. code-block:: python
             :linenos:

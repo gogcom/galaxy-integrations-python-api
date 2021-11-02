@@ -34,7 +34,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinxcontrib.asyncio',
     'sphinx_autodoc_typehints',
-    'm2r'  # mdinclude directive for makrdown files
+    'm2r2'  # mdinclude directive for makrdown files
 ]
 autodoc_member_order = 'bysource'
 autodoc_inherit_docstrings = False
