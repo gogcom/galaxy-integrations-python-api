@@ -7,7 +7,7 @@ plugin
 .. automodule:: galaxy.api.plugin
     :members:
     :undoc-members:
-    :exclude-members: JSONEncoder, features, achievements_import_finished, game_times_import_finished, start_achievements_import, start_game_times_import, get_game_times, get_unlocked_achievements
+    :exclude-members: JSONEncoder, features
 
 types
 -----------------------
