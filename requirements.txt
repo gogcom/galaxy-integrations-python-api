@@ -2,6 +2,6 @@
 # Copied from setup.py because of a pip bug
 #   see https://github.com/pypa/pip/issues/4780
 aiohttp==3.5.4
-certifi==2019.3.9
+certifi==2022.12.7
 psutil==5.6.6; sys_platform == 'darwin'
 # End of copy from setup.py
