@@ -9,6 +9,7 @@ Platform ID list for GOG Galaxy 2.0 Integrations
 | psn	| PlayStation Network |
 | xboxone	| Xbox Live |
 | origin	| Origin |
+| ead	| EA Desktop |
 | uplay	| Uplay |
 | battlenet	| Battle.net |
 | epic	| Epic Games Store |
