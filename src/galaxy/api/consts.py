@@ -10,6 +10,7 @@ class Platform(Enum):
     XBoxOne = "xboxone"
     Generic = "generic"
     Origin = "origin"
+    EADesktop = "ead"
     Uplay = "uplay"
     Battlenet = "battlenet"
     Epic = "epic"
