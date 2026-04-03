@@ -2,7 +2,7 @@ import pytest
 
 from galaxy.api.plugin import Plugin
 from galaxy.api.consts import Platform
-from galaxy.api.jsonrpc import InvalidParams
+from galaxy.api.jsonrpc import Connection, InvalidParams, Request
 from galaxy.unittest.mock import delayed_return_value_iterable
 
 from tests import create_message, get_messages
@@ -101,33 +101,30 @@ async def test_tick_after_handshake(plugin, read):
 
 
 @pytest.mark.asyncio
-async def test_notification_invalid_params_does_not_crash(plugin, read, write):
-    request = {
-        "jsonrpc": "2.0",
-        "method": "install_game",
-        "params": {}
-    }
-    read.side_effect = [create_message(request), b""]
+async def test_notification_invalid_params_does_not_crash(plugin, read, write, reader, writer):
+    called = False
 
-    await plugin.run()
-    await plugin.wait_closed()
+    def callback(game_id):
+        nonlocal called
+        called = True
 
-    plugin.install_game.assert_not_called()
+    connection = Connection(reader, writer)
+    connection.register_notification("install_game", callback, immediate=True)
+    connection._handle_notification(Request(method="install_game", params={}, id=None))
+
+    assert called is False
     assert get_messages(write) == []
 
 
 @pytest.mark.asyncio
-async def test_request_invalid_params_returns_error(plugin, read, write):
-    request = {
-        "jsonrpc": "2.0",
-        "id": "8",
-        "method": "start_achievements_import",
-        "params": {}
-    }
-    read.side_effect = [create_message(request), b""]
+async def test_request_invalid_params_returns_error(plugin, read, write, reader, writer):
+    async def callback(game_ids):
+        return game_ids
 
-    await plugin.run()
-    await plugin.wait_closed()
+    connection = Connection(reader, writer)
+    connection.register_method("start_achievements_import", callback, immediate=False)
+    connection._handle_request(Request(method="start_achievements_import", params={}, id="8"))
+    await connection.wait_closed()
 
     assert get_messages(write) == [
         {
