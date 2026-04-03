@@ -96,6 +96,27 @@ def anonymise_sensitive_params(params, sensitive_params):
 
     return params
 
+
+def _iter_error_types(error_type):
+    yield error_type
+    for subclass in error_type.__subclasses__():
+        yield from _iter_error_types(subclass)
+
+
+def build_error(error):
+    data = error.setdefault("data", None)
+    code = error.setdefault("code", 0)
+    message = error.setdefault("message", "")
+
+    if isinstance(data, Mapping):
+        internal_type = data.get("internal_type")
+        if internal_type:
+            for error_type in _iter_error_types(JsonRpcError):
+                if error_type.__name__ == internal_type:
+                    return error_type(message, data)
+
+    return JsonRpcError(code, message, data)
+
 class Connection():
     def __init__(self, reader, writer, encoder=json.JSONEncoder()):
         self._active = True
@@ -192,6 +213,10 @@ class Connection():
         if self._active:
             logger.info("Closing JSON-RPC server - not more messages will be read")
             self._active = False
+            for request_id, (future, _) in self._requests_futures.items():
+                if not future.done():
+                    future.set_exception(Aborted(data={"request_id": request_id}))
+            self._requests_futures.clear()
 
     async def wait_closed(self):
         await self._task_manager.wait()
@@ -216,7 +241,13 @@ class Connection():
             self._handle_response(message)
 
     def _handle_response(self, response):
-        request_future = self._requests_futures.get(int(response.id))
+        try:
+            request_id = int(response.id)
+        except (TypeError, ValueError):
+            logger.warning("Received response with invalid request id: %s", response.id)
+            return
+
+        request_future = self._requests_futures.pop(request_id, None)
         if request_future is None:
             response_type = "response" if response.result is not None else "error"
             logger.warning("Received %s for unknown request: %s", response_type, response.id)
@@ -225,11 +256,7 @@ class Connection():
         future, sensitive_params = request_future
 
         if response.error:
-            error = JsonRpcError(
-                response.error.setdefault("code", 0),
-                response.error.setdefault("message", ""),
-                response.error.setdefault("data", None)
-            )
+            error = build_error(response.error)
             self._log_error(response, error, sensitive_params)
             future.set_exception(error)
             return
@@ -249,7 +276,8 @@ class Connection():
         try:
             bound_args = signature.bind(**request.params)
         except TypeError:
-            self._send_error(request.id, InvalidParams())
+            logger.error("Received notification with invalid params: %s", request.method)
+            return
 
         if immediate:
             callback(*bound_args.args, **bound_args.kwargs)
@@ -273,6 +301,7 @@ class Connection():
             bound_args = signature.bind(**request.params)
         except TypeError:
             self._send_error(request.id, InvalidParams())
+            return
 
         if immediate:
             response = callback(*bound_args.args, **bound_args.kwargs)

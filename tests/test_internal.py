@@ -2,6 +2,7 @@ import pytest
 
 from galaxy.api.plugin import Plugin
 from galaxy.api.consts import Platform
+from galaxy.api.jsonrpc import InvalidParams
 from galaxy.unittest.mock import delayed_return_value_iterable
 
 from tests import create_message, get_messages
@@ -97,3 +98,41 @@ async def test_tick_after_handshake(plugin, read):
     await plugin.run()
     await plugin.wait_closed()
     plugin.tick.assert_called_with()
+
+
+@pytest.mark.asyncio
+async def test_notification_invalid_params_does_not_crash(plugin, read, write):
+    request = {
+        "jsonrpc": "2.0",
+        "method": "install_game",
+        "params": {}
+    }
+    read.side_effect = [create_message(request), b""]
+
+    await plugin.run()
+    await plugin.wait_closed()
+
+    plugin.install_game.assert_not_called()
+    assert get_messages(write) == []
+
+
+@pytest.mark.asyncio
+async def test_request_invalid_params_returns_error(plugin, read, write):
+    request = {
+        "jsonrpc": "2.0",
+        "id": "8",
+        "method": "start_achievements_import",
+        "params": {}
+    }
+    read.side_effect = [create_message(request), b""]
+
+    await plugin.run()
+    await plugin.wait_closed()
+
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "id": "8",
+            "error": InvalidParams().json()
+        }
+    ]
