@@ -5,7 +5,7 @@ from tests import create_message, get_messages
 from galaxy.api.errors import (
     BackendNotAvailable, BackendTimeout, BackendError, InvalidCredentials, NetworkError, AccessDenied, UnknownError
 )
-from galaxy.api.jsonrpc import JsonRpcError
+from galaxy.api.jsonrpc import Aborted
 
 
 @pytest.mark.asyncio
@@ -37,6 +37,7 @@ async def test_refresh_credentials_success(plugin, read, write):
     ]
 
     assert result == refreshed_credentials
+    assert plugin._connection._requests_futures == {}
     await run_task
 
 @pytest.mark.asyncio
@@ -56,11 +57,10 @@ async def test_refresh_credentials_failure(exception, plugin, read, write):
     # 2 loop iterations delay is to force sending response after request has been sent
     read.side_effect = [create_message(response), b""]
 
-    with pytest.raises(JsonRpcError) as e:
+    with pytest.raises(exception) as e:
         await plugin.refresh_credentials({}, False)
 
-    # Go back to comparing error == e.value, after fixing current always raising JsonRpcError when handling a response with an error
-    assert error.code == e.value.code
+    assert error == e.value
     assert get_messages(write) == [
         {
             "jsonrpc": "2.0",
@@ -70,5 +70,29 @@ async def test_refresh_credentials_failure(exception, plugin, read, write):
             "id": "1"
         }
     ]
+    assert plugin._connection._requests_futures == {}
 
     await run_task
+
+
+@pytest.mark.asyncio
+async def test_refresh_credentials_aborted_on_close(plugin, write):
+    refresh_task = asyncio.create_task(plugin.refresh_credentials({}, False))
+
+    await asyncio.sleep(0)
+    plugin.close()
+
+    with pytest.raises(Aborted):
+        await refresh_task
+
+    assert get_messages(write) == [
+        {
+            "jsonrpc": "2.0",
+            "method": "refresh_credentials",
+            "params": {
+            },
+            "id": "1"
+        }
+    ]
+    assert plugin._connection._requests_futures == {}
+    await plugin.wait_closed()
