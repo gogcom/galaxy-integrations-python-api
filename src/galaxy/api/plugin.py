@@ -238,13 +238,13 @@ class Plugin:
             return result
 
         if immediate:
-            def method(*args, **kwargs):
+            def sync_method(*args, **kwargs):
                 result = handler(*args, **kwargs)
                 return wrap_result(result)
 
-            self._connection.register_method(name, method, True, sensitive_params)
+            self._connection.register_method(name, sync_method, True, sensitive_params)
         else:
-            async def method(*args, **kwargs):
+            async def async_method(*args, **kwargs):
                 if not internal:
                     handler_ = self._wrap_external_method(handler, name)
                 else:
@@ -252,7 +252,7 @@ class Plugin:
                 result = await handler_(*args, **kwargs)
                 return wrap_result(result)
 
-            self._connection.register_method(name, method, False, sensitive_params)
+            self._connection.register_method(name, async_method, False, sensitive_params)
 
     def _register_notification(self, name, handler, internal=False, immediate=False, sensitive_params=False):
         if not internal and not immediate:
