@@ -34,7 +34,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinxcontrib.asyncio',
     'sphinx_autodoc_typehints',
-    'm2r2'  # mdinclude directive for makrdown files
+    'm2r2'  # mdinclude directive for markdown files
 ]
 autodoc_member_order = 'bysource'
 autodoc_inherit_docstrings = False
@@ -58,7 +58,7 @@ exclude_patterns = [] # type: ignore
 #
 html_theme = "sphinx_rtd_theme"
 html_theme_options = {
-    # 'canonical_url': '',  # main page to be serach in google with trailing slash
+    # 'canonical_url': '',  # main page to be searched in google with trailing slash
     'display_version': True,
     'style_external_links': True,
     # Toc options

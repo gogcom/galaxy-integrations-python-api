@@ -61,8 +61,8 @@ class NextStep:
             if not stored_credentials:
                 return NextStep("web_session", PARAMS, cookies=COOKIES, js=JS)
 
-    :param auth_params: configuration options: {"window_title": :class:`str`, "window_width": :class:`str`,
-        "window_height": :class:`int`, "start_uri": :class:`int`, "end_uri_regex": :class:`str`}
+    :param auth_params: configuration options: {"window_title": :class:`str`, "window_width": :class:`int`,
+        "window_height": :class:`int`, "start_uri": :class:`str`, "end_uri_regex": :class:`str`}
     :param cookies: browser initial set of cookies
     :param js: a map of the url regex patterns into the list of *js* scripts that should be executed
         on every document at given step of internal browser authentication.
