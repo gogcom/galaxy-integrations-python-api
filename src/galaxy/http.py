@@ -2,7 +2,7 @@
 This module standardizes http traffic and the error handling for further communication with the GOG Galaxy 2.0.
 
 It is recommended to use provided convenient methods for HTTP requests, especially when dealing with authorized sessions.
-Exemplary simple web service could looks like:
+Exemplary simple web service could look like:
 
     .. code-block:: python
 
